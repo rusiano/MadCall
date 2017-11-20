@@ -12,12 +12,15 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
+    private final Double MADRID_LAT = 40.432643D;
+    private final Double MADRID_LNG = -3.704951D;
     private GoogleMap mMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -38,9 +41,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        // Move the camera map to Madrid
+        LatLng madridLatLng = new LatLng(MADRID_LAT, MADRID_LNG);
+        //mMap.addMarker(new MarkerOptions().position(madrid).title("Madrid"));
+        mMap.moveCamera( CameraUpdateFactory.newLatLng( madridLatLng ) );
+        mMap.animateCamera( CameraUpdateFactory.zoomTo( 11.0f ) );
     }
 }
