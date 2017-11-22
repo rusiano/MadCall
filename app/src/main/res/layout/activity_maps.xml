@@ -9,83 +9,27 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_alignParentTop="true"
-        android:animateLayoutChanges="true">
+        android:layout_height="match_parent">
 
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- DONT MOVE THE DECLARATION OF THE BUTTON ABOVE THE MAP FRAGMENT,
+             OTHERWISE THE BUTTON WILL BE OVERLAYED BY THE MAP AND WILL NOT BE SHOWN -->
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_menu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/fab_margin"
             android:layout_gravity="start|top"
-            app:backgroundTint="@color/colorPrimary"
-            app:layout_anchor="@+id/include"
-            app:layout_anchorGravity="start|top"
-            android:src="@drawable/ic_menu_white_24dp" />
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <fragment
-                android:id="@+id/map"
-                android:name="com.google.android.gms.maps.SupportMapFragment"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <LinearLayout
-                android:id="@+id/infobox_container"
-                android:orientation="horizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/map"
-                android:layout_alignParentBottom="true"
-                android:background="@color/colorPrimaryDark"
-                android:textAlignment="gravity"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/infobox_image"
-                    android:layout_width="200dp"
-                    android:layout_height="200dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_margin="10dp"
-                    android:layout_weight="1"
-                    android:baselineAlignBottom="false"
-                    app:srcCompat="@mipmap/ic_launcher_round"
-                    android:contentDescription="@string/to_do" />
-
-                <TextView
-                    android:id="@+id/infobox_description"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="15dp"
-                    android:layout_weight="1"
-                    android:gravity="center_vertical"
-                    android:text="@string/lorem_ipsum_100w" />
-
-            </LinearLayout>
-
-        </RelativeLayout>
+            android:layout_margin="@dimen/fab_margin"
+            android:src="@drawable/ic_menu_white_24dp"
+            android:visibility="visible"
+            app:backgroundTint="@color/colorPrimary" />
 
     </FrameLayout>
-
-
-
-        <!--<android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab_location"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="@dimen/fab_margin"
-            app:backgroundTint="@color/colorPrimary"
-            app:layout_anchor="@+id/include2"
-            app:layout_anchorGravity="end|bottom"
-            android:src="@drawable/ic_my_location_white_24dp" />-->
-
 
     <android.support.design.widget.NavigationView
         android:layout_width="wrap_content"

@@ -7,7 +7,6 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -22,9 +21,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -33,19 +29,12 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-
-/*import com.hp.hpl.jena.graph.query.*;
-import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.vocabulary.ResultSet;
-
-import org.apache.jena.query.*;
-
-import virtuoso.jena.driver.*;*/
 
 
 public class      MapsActivity
@@ -56,7 +45,6 @@ public class      MapsActivity
                   GoogleMap.OnMyLocationClickListener {
 
     // Keys for storing activity state
-    private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
 
     // Constants
@@ -67,20 +55,15 @@ public class      MapsActivity
     // Design & Layout
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
-    private LinearLayout mInfoBox;
-    private ImageView mInfoImage;
-    private TextView mInfoDescription;
-
-    // Google Map API -related
-    private final LatLng mDefaultLocation = new LatLng(40.432643D, -3.704951D);
-    private boolean mLocationPermissionGranted;
-    private GoogleMap mMap;
-    private Location mLastKnownLocation;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private boolean mInfoBoxOpen;
 
-    // Jena API -related
-    //private final static String VIRTUOSO_SERVER_URL = "jdbc:virtuoso://localhost:8890";
+    // Google Map API related
+    private final LatLng mDefaultLocation = new LatLng(40.432643D, -3.704951D);
+    private GoogleMap mMap;
+    private SupportMapFragment mMapFragment;
+    private boolean mLocationPermissionGranted;
+    private FusedLocationProviderClient mFusedLocationProviderClient;
+    private Location mLastKnownLocation;
 
     /**
      * Starts the application.
@@ -90,32 +73,46 @@ public class      MapsActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Retrieve location and camera position from saved instance state.
+        // In case there is a previously saved instance of the app, retrieve information from it.
         if (savedInstanceState != null) {
             mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
-            //*CameraPosition mCameraPosition = *//*savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
         }
 
+        // Set up all the variables related to the layout.
+        setupLayoutAndDesign();
+
+        // In case the user has no internet connection, show an Alert Dialog.
+        if(!isConnected(this))
+            buildConnectionAlertDialog(this).show();
+
+        // Get notified when the map is ready to be used.
+        mMapFragment.getMapAsync(this);
+    }
+
+    /**
+     * Put here all initializations/declarations that regard layout and design elements.
+     */
+    private void setupLayoutAndDesign() {
         // Associate a layout file to the activity.
         setContentView(R.layout.activity_maps);
 
-        // Set the customized Action Bar as the default one.
+        /* // Set the customized Action Bar as the default one.
         Toolbar mToolbar = findViewById(R.id.sidebar_actionbar);
         setSupportActionBar(mToolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setDisplayShowTitleEnabled(false);
-        }
+        }*/
 
-        // Obtain the Sidebar Drawer Menu and set the listener for opening and closing.
+        // Obtain the Sidebar Drawer Menu and set the listener.
         mDrawerLayout = findViewById(R.id.drawerLayout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
                 R.string.open_drawer, R.string.close_drawer);
         mDrawerLayout.addDrawerListener(mDrawerToggle);
         mDrawerToggle.syncState();
 
-        // Obtain the menu button and set its behaviour
+        // Obtain the menu button and set the listener.
         FloatingActionButton mMenuButton = findViewById(R.id.fab_menu);
         mMenuButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -124,22 +121,13 @@ public class      MapsActivity
             }
         });
 
-        // Obtain the InfoBox and set its toggle variable to false (infobox is closed at startup).
-        mInfoBox = findViewById(R.id.infobox_container);
-        mInfoImage = findViewById(R.id.infobox_image);
-        mInfoDescription = findViewById(R.id.infobox_description);
+        // Obtain the InfoBox and initialize its toggle variable
+        // TODO: implement an infobox sliding from the bottom
         mInfoBoxOpen = false;
 
-        if(!isConnected(this))
-            buildDialog(this).show();
-
-        // Construct a FusedLocationProviderClient.
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+        // Obtain the SupportMapFragment (= map)
+        mMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
     }
 
     /**
@@ -148,7 +136,6 @@ public class      MapsActivity
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         if (mMap != null) {
-            outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
             outState.putParcelable(KEY_LOCATION, mLastKnownLocation);
             super.onSaveInstanceState(outState);
         }
@@ -164,7 +151,6 @@ public class      MapsActivity
         NetworkInfo netInfo = (cm != null) ?
                                cm.getActiveNetworkInfo() :
                                null;
-
         if (netInfo == null)
             return false;
 
@@ -181,7 +167,7 @@ public class      MapsActivity
     /**
      * Shows a simple Alert Dialog Box to inform the user about lack of connection.
      */
-    public AlertDialog.Builder buildDialog(Context context) {
+    public AlertDialog.Builder buildConnectionAlertDialog(Context context) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("No Internet Connection!");
@@ -210,20 +196,23 @@ public class      MapsActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        // Construct a FusedLocationProviderClient: it allows to get the best location using
+        //  a combination of information coming from Wifi/Mobile Data & GPS.
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
         // Prompt the user for permission.
         getLocationPermission();
 
-        // Turn on the My Location layer and the related control on the map.
+        // Turn on the My Location layer and the related controls on the map.
         updateLocationUI();
 
         // Get the current location of the device and set the position of the map.
         getDeviceLocation();
 
+        // TODO: display markers around device location
         mMap.addMarker(new MarkerOptions().position(new LatLng(40.406164D, -3.740124D)));
-
         mMap.setOnMarkerClickListener(this);
-        // Plot few markers
-        //String rdfFilename = "/sampledata/MadCall_Model.rdf";
+
     }
 
     /**
@@ -253,9 +242,9 @@ public class      MapsActivity
      * Updates the map's UI settings based on whether the user has granted location permission.
      */
     private void updateLocationUI() {
-        if (mMap == null) {
+        if (mMap == null)
             return;
-        }
+
         try {
             if (mLocationPermissionGranted) {
                 mMap.setMyLocationEnabled(true);
@@ -286,19 +275,19 @@ public class      MapsActivity
                 locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
                     @Override
                     public void onComplete(@NonNull Task<Location> task) {
-                        if (task.isSuccessful()) {
-                            // Set the map's camera position to the current location of the device.
-                            mLastKnownLocation = task.getResult();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                    new LatLng(mLastKnownLocation.getLatitude(),
-                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                        } else {
-                            Log.d(LOG_TAG, "Current location is null. Using defaults.");
-                            Log.e(LOG_TAG, "Exception: %s", task.getException());
-                            mMap.moveCamera(CameraUpdateFactory
-                                    .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
-                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                        }
+                    if (task.isSuccessful()) {
+                        // Set the map's camera position to the current location of the device.
+                        mLastKnownLocation = task.getResult();
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                new LatLng(mLastKnownLocation.getLatitude(),
+                                        mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                    } else {
+                        Log.d(LOG_TAG, "Current location is null. Using defaults.");
+                        Log.e(LOG_TAG, "Exception: %s", task.getException());
+                        mMap.moveCamera(CameraUpdateFactory
+                                .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
+                        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                    }
                     }
                 });
             }
@@ -367,14 +356,10 @@ public class      MapsActivity
             Toast.makeText(this, "InfoBox was open: closing it.", Toast.LENGTH_SHORT)
                     .show();
             mInfoBoxOpen = false;
-            mInfoBox.setVisibility(View.GONE);
-            //mDrawerLayout.closeDrawer(Gravity.START);
         } else {
             Toast.makeText(this, "InfoBox was closed: opening it.", Toast.LENGTH_SHORT)
                     .show();
             mInfoBoxOpen = true;
-            mInfoBox.setVisibility(View.VISIBLE);
-            //mDrawerLayout.openDrawer(Gravity.START);
 
             //TODO: retrieve information for the appropriate marker and display it
         }
