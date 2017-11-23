@@ -3,6 +3,7 @@ package com.example.rusia.madcall;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -12,29 +13,33 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import java.util.Random;
 
 
 public class      MapsActivity
@@ -42,27 +47,41 @@ public class      MapsActivity
        implements OnMapReadyCallback,
                   GoogleMap.OnMarkerClickListener,
                   GoogleMap.OnMyLocationButtonClickListener,
-                  GoogleMap.OnMyLocationClickListener {
+                  GoogleMap.OnMyLocationClickListener,
+                  GoogleMap.OnCameraMoveStartedListener,
+                  GoogleMap.OnCameraMoveListener,
+                  GoogleMap.OnCameraIdleListener {
 
     // Keys for storing activity state
     private static final String KEY_LOCATION = "location";
 
     // Constants
     private final static String LOG_TAG = "MADCALL";
-    private static final int DEFAULT_ZOOM = 15;
+    private static final int DEFAULT_ZOOM = 17;
     private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final double MAX_LAT = 40.512562D;
+    private static final double MIN_LAT = 40.323582D;
+    private static final double MAX_LNG = -3.518181D;
+    private static final double MIN_LNG = -3.822365D;
+    private static final int[] icons = {R.drawable.ic_event_black_24dp,
+                                        R.drawable.ic_location_city_black_24dp,
+                                        R.drawable.ic_person_black_24dp};
 
     // Design & Layout
     private DrawerLayout mDrawerLayout;
     private ActionBarDrawerToggle mDrawerToggle;
-    private boolean mInfoBoxOpen;
+    private BottomSheetLayout mBottomSheet;
+    private FloatingActionButton mMyLocationButton;
 
     // Google Map API related
     private final LatLng mDefaultLocation = new LatLng(40.432643D, -3.704951D);
+    private final LatLng mSouthWestBound = new LatLng(MIN_LAT, MIN_LNG);
+    private final LatLng mNorthEastBound = new LatLng(MAX_LAT, MAX_LNG);
+    private final LatLngBounds mDefaultBounds = new LatLngBounds(mSouthWestBound, mNorthEastBound);
+
     private GoogleMap mMap;
     private SupportMapFragment mMapFragment;
     private boolean mLocationPermissionGranted;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private Location mLastKnownLocation;
 
     /**
@@ -96,15 +115,6 @@ public class      MapsActivity
         // Associate a layout file to the activity.
         setContentView(R.layout.activity_maps);
 
-        /* // Set the customized Action Bar as the default one.
-        Toolbar mToolbar = findViewById(R.id.sidebar_actionbar);
-        setSupportActionBar(mToolbar);
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setDisplayShowTitleEnabled(false);
-        }*/
-
         // Obtain the Sidebar Drawer Menu and set the listener.
         mDrawerLayout = findViewById(R.id.drawerLayout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
@@ -121,9 +131,11 @@ public class      MapsActivity
             }
         });
 
-        // Obtain the InfoBox and initialize its toggle variable
-        // TODO: implement an infobox sliding from the bottom
-        mInfoBoxOpen = false;
+        // Obtain the customized MyLocation button
+        mMyLocationButton = findViewById(R.id.fab_location);
+
+        // Obtain the InfoBox.
+        mBottomSheet = findViewById(R.id.bottomsheet);
 
         // Obtain the SupportMapFragment (= map)
         mMapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -196,10 +208,6 @@ public class      MapsActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Construct a FusedLocationProviderClient: it allows to get the best location using
-        //  a combination of information coming from Wifi/Mobile Data & GPS.
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
         // Prompt the user for permission.
         getLocationPermission();
 
@@ -210,9 +218,31 @@ public class      MapsActivity
         getDeviceLocation();
 
         // TODO: display markers around device location
-        mMap.addMarker(new MarkerOptions().position(new LatLng(40.406164D, -3.740124D)));
+        placeRandomMarkers(200);
+
+        // calle sepulveda
+        mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(40.404482D, -3.739823D))
+                .icon(BitmapDescriptorFactory.fromBitmap(
+                        BitmapFactory.decodeResource(
+                                this.getResources(), R.drawable.ic_location_city_black_24dp))));
+
         mMap.setOnMarkerClickListener(this);
 
+    }
+
+    private void placeRandomMarkers(int n) {
+        for (int i = 0; i < n; i++) {
+            Double lat = MIN_LAT + (MAX_LAT - MIN_LAT) * new Random().nextDouble();
+            Double lng = MIN_LNG + (MAX_LNG - MIN_LNG) * new Random().nextDouble();
+            int ic = new Random().nextInt(icons.length);
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(lat, lng))
+                    .icon(BitmapDescriptorFactory.fromBitmap(
+                            BitmapFactory.decodeResource(
+                                    this.getResources(), icons[ic]))));
+        }
     }
 
     /**
@@ -245,14 +275,26 @@ public class      MapsActivity
         if (mMap == null)
             return;
 
+        // Constrain the map to Madrid area
+        mMap.setLatLngBoundsForCameraTarget(mDefaultBounds);
+
+        // Hide the default MyLocation button provided by Google Maps API
+        mMap.getUiSettings().setMyLocationButtonEnabled(false);
+
+        // Define the listener for our customized MyLocation button
+        mMyLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getDeviceLocation();
+            }
+        });
+
+        // Allow for the blue dot of user current location only if location permissions are granted.
         try {
             if (mLocationPermissionGranted) {
                 mMap.setMyLocationEnabled(true);
-                mMap.getUiSettings().setMyLocationButtonEnabled(true);
-                mMap.getUiSettings().setZoomControlsEnabled(true);
             } else {
                 mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
                 mLastKnownLocation = null;
                 getLocationPermission();
             }
@@ -269,6 +311,11 @@ public class      MapsActivity
          * Get the best and most recent location of the device, which may be null in rare
          * cases when a location is not available.
          */
+
+        // Construct a FusedLocationProviderClient: it allows to get the best location using
+        //  a combination of information coming from Wifi/Mobile Data & GPS.
+        FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
         try {
             if (mLocationPermissionGranted) {
                 Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
@@ -352,21 +399,30 @@ public class      MapsActivity
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
-        if (mInfoBoxOpen) {
-            Toast.makeText(this, "InfoBox was open: closing it.", Toast.LENGTH_SHORT)
-                    .show();
-            mInfoBoxOpen = false;
-        } else {
-            Toast.makeText(this, "InfoBox was closed: opening it.", Toast.LENGTH_SHORT)
-                    .show();
-            mInfoBoxOpen = true;
+        // Slide in the infobox (bottomsheet) and inflate the corresponding layout.
+        mBottomSheet.showWithSheetView(LayoutInflater.from(this).inflate(
+                R.layout.infobox, mBottomSheet, false));
 
-            //TODO: retrieve information for the appropriate marker and display it
-        }
+        //TODO: retrieve information for the appropriate marker and display it in the bottom sheet
 
         // Return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
         return false;
+    }
+
+    @Override
+    public void onCameraIdle() {
+
+    }
+
+    @Override
+    public void onCameraMove() {
+
+    }
+
+    @Override
+    public void onCameraMoveStarted(int i) {
+
     }
 }

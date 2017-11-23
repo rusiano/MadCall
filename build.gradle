@@ -22,6 +22,7 @@ allprojects {
         maven {
             url "https://maven.google.com"
         }
+        //mavenLocal() // for jena (NOT WORKING - commenting it out...)
     }
 }
 
