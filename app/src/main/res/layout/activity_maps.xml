@@ -1,79 +1,144 @@
-<android.support.v4.widget.DrawerLayout
+<com.example.rusia.madcall.design.CustomSlidingPaneLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context="com.example.rusia.madcall.MapsActivity"
-    android:id="@+id/drawerLayout"
+    android:id="@+id/sliding_pane_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- CONTENT 1: The main view -->
+    <!-- PLEASE DO NOT CHANGE CHILDREN ORDER -->
+
+    <!-- CONTENT 1 (on the left): The Master Pane -->
+    <fragment
+        android:id="@+id/master_pane"
+        android:name="com.example.rusia.madcall.design.MasterPaneFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent" />
+
+    <!-- CONTENT 2 (on the right): The main view -->
     <com.flipboard.bottomsheet.BottomSheetLayout
         android:id="@+id/bottomsheet"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <fragment
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
 
-        <!-- DONT MOVE THE DECLARATION OF THE BUTTON ABOVE THE MAP FRAGMENT,
-             OTHERWISE THE BUTTON WILL BE OVERLAYED BY THE MAP AND WILL NOT BE SHOWN -->
-        <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Icons on the left-top -->
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/fab_menu"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|top"
+                    android:layout_margin="5dp"
+                    android:src="@drawable/ic_menu_white_24dp"
+                    android:visibility="visible"
+                    app:backgroundTint="@color/colorPrimary" />
+
+                <!-- Hidden Icons & Descriptions -->
+                <RelativeLayout
+                    android:id="@+id/left_icons"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="5dp"
+                    android:layout_below="@id/fab_menu"
+                    android:visibility="gone">
+
+                    <!-- 1st icon: NEAR ME -->
+                    <RelativeLayout
+                        android:id="@+id/near_me_box"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical|center_horizontal">
+
+                        <TextView
+                            android:id="@+id/fab_near_me_description"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentLeft="true"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginLeft="21dp"
+                            android:layout_marginStart="21dp"
+                            android:background="@drawable/button_description_background"
+                            android:gravity="center_vertical|center_horizontal"
+                            android:text="@string/near_me"
+                            android:textColor="@color/white"
+                            android:textSize="18sp"
+                            android:visibility="gone" />
+
+                        <android.support.design.widget.FloatingActionButton
+                            android:id="@+id/fab_near_me"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|top"
+                            android:src="@drawable/ic_near_me_white_24dp"
+                            android:visibility="visible"
+                            app:backgroundTint="@color/colorPrimary" />
+
+                    </RelativeLayout>
+
+                    <!-- 2nd icon: ADVANCED SEARCH -->
+                    <RelativeLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/near_me_box">
+
+                        <TextView
+                            android:id="@+id/fab_search_description"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentLeft="true"
+                            android:layout_alignParentStart="true"
+                            android:layout_centerVertical="true"
+                            android:layout_marginLeft="22dp"
+                            android:layout_marginStart="22dp"
+                            android:background="@drawable/button_description_background"
+                            android:gravity="center_vertical|center_horizontal|center"
+                            android:text="@string/advanced_search"
+                            android:textColor="@color/white"
+                            android:textSize="18sp"
+                            android:visibility="gone" />
+
+                        <android.support.design.widget.FloatingActionButton
+                            android:id="@+id/fab_search"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="start|top"
+                            android:src="@drawable/ic_search_white_24dp"
+                            android:visibility="visible"
+                            app:backgroundTint="@color/colorPrimary" />
+
+                    </RelativeLayout>
+
+                </RelativeLayout>
+
+            </RelativeLayout>
 
             <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fab_menu"
+                android:id="@+id/fab_location"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start|top"
+                android:layout_gravity="end|top"
                 android:layout_margin="5dp"
-                android:src="@drawable/ic_near_me_white_24dp"
+                android:src="@drawable/ic_my_location_white_24dp"
                 android:visibility="visible"
                 app:backgroundTint="@color/colorPrimary" />
 
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fab_search"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/fab_menu"
-                android:layout_gravity="start|top"
-                android:layout_marginStart="5dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginTop="0dp"
-                android:src="@drawable/ic_search_white_24dp"
-                android:visibility="visible"
-                app:backgroundTint="@color/colorPrimary" />
-
-        </RelativeLayout>
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/fab_location"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|top"
-            android:layout_margin="5dp"
-            android:src="@drawable/ic_my_location_white_24dp"
-            android:visibility="visible"
-            app:backgroundTint="@color/colorPrimary" />
-
-    </FrameLayout>
+        </FrameLayout>
 
     </com.flipboard.bottomsheet.BottomSheetLayout>
 
-    <!-- CONTENT 2: The navigation drawer -->
-    <android.support.design.widget.NavigationView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="start"
-        app:headerLayout="@layout/sidebar_header"
-        app:menu="@menu/sidebar_navigation_drawer" />
-
-</android.support.v4.widget.DrawerLayout>
+</com.example.rusia.madcall.design.CustomSlidingPaneLayout>

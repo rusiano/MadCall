@@ -12,77 +12,46 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.rusia.madcall.design.CustomSlidingPaneLayout;
+//import com.example.rusia.madcall.design.MasterPaneFragment;
 import com.flipboard.bottomsheet.BottomSheetLayout;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-
-import java.util.Random;
-
 
 public class      MapsActivity
        extends    AppCompatActivity
        implements OnMapReadyCallback,
                   GoogleMap.OnMarkerClickListener,
-                  GoogleMap.OnMyLocationButtonClickListener,
-                  GoogleMap.OnMyLocationClickListener,
                   GoogleMap.OnCameraMoveStartedListener,
                   GoogleMap.OnCameraMoveListener,
                   GoogleMap.OnCameraIdleListener {
 
     // Keys for storing activity state
-    private static final String KEY_LOCATION = "location";
-
-    // Constants
-    private final static String LOG_TAG = "MADCALL";
-    private static final int DEFAULT_ZOOM = 17;
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
-    private static final double MAX_LAT = 40.512562D;
-    private static final double MIN_LAT = 40.323582D;
-    private static final double MAX_LNG = -3.518181D;
-    private static final double MIN_LNG = -3.822365D;
-    private static final int[] icons = {R.drawable.ic_event_black_24dp,
-                                        R.drawable.ic_location_city_black_24dp,
-                                        R.drawable.ic_person_black_24dp};
+    private static final String     KEY_LOCATION = "location";
 
     // Design & Layout
-    private DrawerLayout mDrawerLayout;
-    private ActionBarDrawerToggle mDrawerToggle;
-    private BottomSheetLayout mBottomSheet;
-    private FloatingActionButton mMyLocationButton;
+    private CustomSlidingPaneLayout mSlidingPaneLayout;
+    private BottomSheetLayout       mBottomSheet;
+    private FloatingActionButton    mMyLocationButton, mMenuButton;
+    private SupportMapFragment      mMapFragment;
+    //private MasterPaneFragment      mMasterPaneFragment;
 
-    // Google Map API related
-    private final LatLng mDefaultLocation = new LatLng(40.432643D, -3.704951D);
-    private final LatLng mSouthWestBound = new LatLng(MIN_LAT, MIN_LNG);
-    private final LatLng mNorthEastBound = new LatLng(MAX_LAT, MAX_LNG);
-    private final LatLngBounds mDefaultBounds = new LatLngBounds(mSouthWestBound, mNorthEastBound);
+    // Others
+    private static boolean          mLocationPermissionGranted;
+    private GoogleMap               mMap;
 
-    private GoogleMap mMap;
-    private SupportMapFragment mMapFragment;
-    private boolean mLocationPermissionGranted;
-    private Location mLastKnownLocation;
 
     /**
      * Starts the application.
@@ -94,7 +63,8 @@ public class      MapsActivity
 
         // In case there is a previously saved instance of the app, retrieve information from it.
         if (savedInstanceState != null) {
-            mLastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION);
+            MapsUtils.setmLastKnownLocation(
+                    (Location) savedInstanceState.getParcelable(KEY_LOCATION));
         }
 
         // Set up all the variables related to the layout.
@@ -115,24 +85,105 @@ public class      MapsActivity
         // Associate a layout file to the activity.
         setContentView(R.layout.activity_maps);
 
-        // Obtain the Sidebar Drawer Menu and set the listener.
-        mDrawerLayout = findViewById(R.id.drawerLayout);
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout,
-                R.string.open_drawer, R.string.close_drawer);
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
-        mDrawerToggle.syncState();
+        // Obtain the Sliding Pane Layout object and close the master pane by default
+        mSlidingPaneLayout = findViewById(R.id.sliding_pane_layout);
+        mSlidingPaneLayout.closePane();
 
-        // Obtain the menu button and set the listener.
-        FloatingActionButton mMenuButton = findViewById(R.id.fab_menu);
+        // Obtain the customized MyLocation button and the other buttons
+        mMyLocationButton = findViewById(R.id.fab_location);
+
+        // Obtain the menu button and define its behavior
+        final boolean[] isMenuOpen = {false};   // save button state
+        mMenuButton = findViewById(R.id.fab_menu);
         mMenuButton.setOnClickListener(new View.OnClickListener() {
+
+            // When the menu button is clicked show/hide all navigation buttons
             @Override
             public void onClick(View view) {
-                mDrawerLayout.openDrawer(Gravity.START);
+                if(isMenuOpen[0]) {
+                    isMenuOpen[0] = false;
+                    mMenuButton.setRotation(0);
+                    findViewById(R.id.left_icons).setVisibility(View.GONE);
+                } else {
+                    isMenuOpen[0] = true;
+                    mMenuButton.setRotation(90);
+                    findViewById(R.id.left_icons).setVisibility(View.VISIBLE);
+                }
             }
         });
 
-        // Obtain the customized MyLocation button
-        mMyLocationButton = findViewById(R.id.fab_location);
+
+        // Obtain the NearMe button and define its behavior
+        final boolean[] isNearMeButtonPressed = {false};    // save button state
+        FloatingActionButton mNearMeButton = findViewById(R.id.fab_near_me);
+        mNearMeButton.setOnClickListener(new View.OnClickListener() {
+
+            // When NearMe button is clicked open the master pane with NearMe layout
+            @Override
+            public void onClick(View view) {
+                mSlidingPaneLayout.openPane();
+
+                //TODO: change master pane layout accordingly
+            }
+        });
+        mNearMeButton.setOnLongClickListener(new View.OnLongClickListener() {
+
+            // When NearMe button is longclicked save state to catch later the button release
+            @Override
+            public boolean onLongClick(View view) {
+                // Show the description of the button and save the state
+                findViewById(R.id.fab_near_me_description).setVisibility(View.VISIBLE);
+                isNearMeButtonPressed[0] = true;
+
+                // Return true to consume the event and not trigger the simple click, too
+                return true;
+            }
+        });
+        mNearMeButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                // If search button is pressed and the user releases it, hide the button description
+                if (isNearMeButtonPressed[0] && motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    findViewById(R.id.fab_near_me_description).setVisibility(View.GONE);
+                    isNearMeButtonPressed[0] = false;
+                }
+                return false;
+            }
+        });
+
+        // Obtain the AdvancedSearch button and define its behavior
+        final boolean[] isSearchButtonPressed = {false};    // save button state
+        FloatingActionButton mSearchButton = findViewById(R.id.fab_search);
+        mSearchButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mSlidingPaneLayout.openPane();
+
+                //TODO: change master pane layout accordingly
+            }
+        });
+        mSearchButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                // Show the description of the button and save the state
+                findViewById(R.id.fab_search_description).setVisibility(View.VISIBLE);
+                isSearchButtonPressed[0] = true;
+
+                // Return true to consume the event and not trigger the simple click, too
+                return true;
+            }
+        });
+        mSearchButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                // If search button is pressed and the user releases it, hide the button description
+                if (isSearchButtonPressed[0] && motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    findViewById(R.id.fab_search_description).setVisibility(View.GONE);
+                    isSearchButtonPressed[0] = false;
+                }
+                return false;
+            }
+        });
 
         // Obtain the InfoBox.
         mBottomSheet = findViewById(R.id.bottomsheet);
@@ -142,13 +193,34 @@ public class      MapsActivity
                 .findFragmentById(R.id.map);
     }
 
+    /*private void openMasterPaneLayout(int layout) {
+        // Create new fragment and transaction
+        mMasterPaneFragment = new MasterPaneFragment();
+
+        // Replace whatever is in the fragment_container view with this fragment,
+        // and add the transaction to the back stack
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.master_pane, mMasterPaneFragment);
+
+        *//*
+         * Before you call commit(), however, you might want to call addToBackStack(), in order to
+         * add the transaction to a back stack of fragment transactions. This back stack is managed
+         * by the activity and allows the user to return to the previous fragment state,
+         * by pressing the Back button.
+         *//*
+        transaction.addToBackStack(null);
+
+        // Commit the transaction
+        transaction.commit();
+    }*/
+
     /**
      * Saves the state of the map when the activity is paused.
      */
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         if (mMap != null) {
-            outState.putParcelable(KEY_LOCATION, mLastKnownLocation);
+            outState.putParcelable(KEY_LOCATION, MapsUtils.getmLastKnownLocation());
             super.onSaveInstanceState(outState);
         }
     }
@@ -212,13 +284,17 @@ public class      MapsActivity
         getLocationPermission();
 
         // Turn on the My Location layer and the related controls on the map.
-        updateLocationUI();
+        MapsUtils.updateLocationUI(this, mMap, mMyLocationButton);
+
+        // If after the UI update the MyLocation layer is still not enabled, re-try asking for permission
+        if (!mMap.isMyLocationEnabled()){
+            getLocationPermission();
+        }
 
         // Get the current location of the device and set the position of the map.
-        getDeviceLocation();
+        MapsUtils.getDeviceLocation(this, mMap);
 
         // TODO: display markers around device location
-        placeRandomMarkers(200);
 
         // calle sepulveda
         mMap.addMarker(new MarkerOptions()
@@ -227,22 +303,10 @@ public class      MapsActivity
                         BitmapFactory.decodeResource(
                                 this.getResources(), R.drawable.ic_location_city_black_24dp))));
 
+        MapsUtils.placeRandomMarkers(this, mMap, 200);
+
         mMap.setOnMarkerClickListener(this);
 
-    }
-
-    private void placeRandomMarkers(int n) {
-        for (int i = 0; i < n; i++) {
-            Double lat = MIN_LAT + (MAX_LAT - MIN_LAT) * new Random().nextDouble();
-            Double lng = MIN_LNG + (MAX_LNG - MIN_LNG) * new Random().nextDouble();
-            int ic = new Random().nextInt(icons.length);
-
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(lat, lng))
-                    .icon(BitmapDescriptorFactory.fromBitmap(
-                            BitmapFactory.decodeResource(
-                                    this.getResources(), icons[ic]))));
-        }
     }
 
     /**
@@ -250,14 +314,14 @@ public class      MapsActivity
      * The result of the permission request is handled by a callback,
      * @see onRequestPermissionsResult
      */
-    private void getLocationPermission() {
+    void getLocationPermission() {
         if (getPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mLocationPermissionGranted = true;
         } else {
             ActivityCompat.requestPermissions(this, new String[]{
                     android.Manifest.permission.ACCESS_FINE_LOCATION
-                }, PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
+            }, MapsUtils.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
     }
 
@@ -268,80 +332,6 @@ public class      MapsActivity
         return ContextCompat.checkSelfPermission(this.getApplicationContext(), permissionType);
     }
 
-    /**
-     * Updates the map's UI settings based on whether the user has granted location permission.
-     */
-    private void updateLocationUI() {
-        if (mMap == null)
-            return;
-
-        // Constrain the map to Madrid area
-        mMap.setLatLngBoundsForCameraTarget(mDefaultBounds);
-
-        // Hide the default MyLocation button provided by Google Maps API
-        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-
-        // Define the listener for our customized MyLocation button
-        mMyLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getDeviceLocation();
-            }
-        });
-
-        // Allow for the blue dot of user current location only if location permissions are granted.
-        try {
-            if (mLocationPermissionGranted) {
-                mMap.setMyLocationEnabled(true);
-            } else {
-                mMap.setMyLocationEnabled(false);
-                mLastKnownLocation = null;
-                getLocationPermission();
-            }
-        } catch (SecurityException e)  {
-            Log.e("Exception: %s", e.getMessage());
-        }
-    }
-
-    /**
-     * Gets the current location of the device, and positions the map's camera.
-     */
-    private void getDeviceLocation() {
-        /*
-         * Get the best and most recent location of the device, which may be null in rare
-         * cases when a location is not available.
-         */
-
-        // Construct a FusedLocationProviderClient: it allows to get the best location using
-        //  a combination of information coming from Wifi/Mobile Data & GPS.
-        FusedLocationProviderClient mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
-        try {
-            if (mLocationPermissionGranted) {
-                Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
-                locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Location> task) {
-                    if (task.isSuccessful()) {
-                        // Set the map's camera position to the current location of the device.
-                        mLastKnownLocation = task.getResult();
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                new LatLng(mLastKnownLocation.getLatitude(),
-                                        mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-                    } else {
-                        Log.d(LOG_TAG, "Current location is null. Using defaults.");
-                        Log.e(LOG_TAG, "Exception: %s", task.getException());
-                        mMap.moveCamera(CameraUpdateFactory
-                                .newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
-                        mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                    }
-                    }
-                });
-            }
-        } catch (SecurityException e)  {
-            Log.e("Exception: %s", e.getMessage());
-        }
-    }
 
     /**
      * Handles the result of the request for location permissions.
@@ -352,7 +342,7 @@ public class      MapsActivity
                                            @NonNull int[] grantResults) {
         mLocationPermissionGranted = false;
         switch (requestCode) {
-            case PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
+            case MapsUtils.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -360,37 +350,8 @@ public class      MapsActivity
                 }
             }
         }
-        updateLocationUI();
-    }
 
-
-    /**
-     * This method allows the sidebar navigation menu to toggle when touched.
-     * @param item The item of the menu that has been clicked.
-     * @return -
-     */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return mDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * This method is called when the user clicks on his position.
-     */
-    @Override
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * This method is called when the user clicks on MyLocation button.
-     */
-    @Override
-    public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        // (For now) Return false so that we don't consume the event and the default behavior still
-        // occurs (i.e.the camera animates to the user's current position).
-        return false;
+        MapsUtils.updateLocationUI(this, mMap, mMyLocationButton);
     }
 
     /**
@@ -403,6 +364,10 @@ public class      MapsActivity
         mBottomSheet.showWithSheetView(LayoutInflater.from(this).inflate(
                 R.layout.infobox, mBottomSheet, false));
 
+        Toast.makeText(this,
+                "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
+                Toast.LENGTH_SHORT).show();
+
         //TODO: retrieve information for the appropriate marker and display it in the bottom sheet
 
         // Return false to indicate that we have not consumed the event and that we wish
@@ -411,18 +376,26 @@ public class      MapsActivity
         return false;
     }
 
+    //TODO: implement
     @Override
     public void onCameraIdle() {
 
     }
 
+    //TODO: implement
     @Override
     public void onCameraMove() {
 
     }
 
+    //TODO: implement
     @Override
     public void onCameraMoveStarted(int i) {
 
     }
+
+    static boolean ismLocationPermissionGranted() {
+        return mLocationPermissionGranted;
+    }
+
 }
