@@ -19,7 +19,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.rusia.madcall.design.CustomSlidingPaneLayout;
-//import com.example.rusia.madcall.design.MasterPaneFragment;
+//import com.example.rusia.madcall.fragment.NearMeFragment;
 import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -44,7 +44,7 @@ public class      MapsActivity
     private BottomSheetLayout       mBottomSheet;
     private FloatingActionButton    mMyLocationButton, mMenuButton;
     private SupportMapFragment      mMapFragment;
-    //private MasterPaneFragment      mMasterPaneFragment;
+    //private NearMeFragment      mMasterPaneFragment;
 
     // Others
     private static boolean          mLocationPermissionGranted;
@@ -183,6 +183,40 @@ public class      MapsActivity
             }
         });
 
+        // Obtain the Settings button and define its behavior
+        final boolean[] isSettingsButtonPressed = {false};    // save button state
+        FloatingActionButton mSettingsButton = findViewById(R.id.fab_search);
+        mSettingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mSlidingPaneLayout.openPane();
+
+                //TODO: change master pane layout accordingly
+            }
+        });
+        mSettingsButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                // Show the description of the button and save the state
+                findViewById(R.id.fab_settings).setVisibility(View.VISIBLE);
+                isSettingsButtonPressed[0] = true;
+
+                // Return true to consume the event and not trigger the simple click, too
+                return true;
+            }
+        });
+        mSettingsButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                // If search button is pressed and the user releases it, hide the button description
+                if (isSettingsButtonPressed[0] && motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    findViewById(R.id.fab_settings_description).setVisibility(View.GONE);
+                    isSettingsButtonPressed[0] = false;
+                }
+                return false;
+            }
+        });
+
         // Obtain the InfoBox.
         mBottomSheet = findViewById(R.id.bottomsheet);
 
@@ -193,7 +227,7 @@ public class      MapsActivity
 
     /*private void openMasterPaneLayout(int layout) {
         // Create new fragment and transaction
-        mMasterPaneFragment = new MasterPaneFragment();
+        mMasterPaneFragment = new NearMeFragment();
 
         // Replace whatever is in the fragment_container view with this fragment,
         // and add the transaction to the back stack
