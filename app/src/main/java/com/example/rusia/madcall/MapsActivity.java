@@ -198,7 +198,7 @@ public class      MapsActivity
             @Override
             public boolean onLongClick(View view) {
                 // Show the description of the button and save the state
-                findViewById(R.id.fab_settings).setVisibility(View.VISIBLE);
+                findViewById(R.id.fab_settings_description).setVisibility(View.VISIBLE);
                 isSettingsButtonPressed[0] = true;
 
                 // Return true to consume the event and not trigger the simple click, too
