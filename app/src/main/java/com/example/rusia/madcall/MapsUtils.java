@@ -2,10 +2,14 @@ package com.example.rusia.madcall;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 
@@ -13,6 +17,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -61,10 +66,25 @@ class MapsUtils {
 
             mMap.addMarker(new MarkerOptions()
                     .position(new LatLng(lat, lng))
-                    .icon(BitmapDescriptorFactory.fromBitmap(
-                            BitmapFactory.decodeResource(
-                                    ctx.getResources(), ICONS[ic]))));
+                    .icon(bitmapDescriptorFromVector(ctx, ICONS[ic])));
         }
+    }
+
+    /**
+     * This method transforms a Vector (icon) into a Bitmap. The previous implementation was
+     * making the emulator crash and was removed.
+     * Source: https://stackoverflow.com/questions/42365658/custom-marker-in-google-maps-in-android-with-vector-asset-icon
+     */
+    static BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorResId) {
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight());
+
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+
+        vectorDrawable.draw(new Canvas(bitmap));
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     /**
@@ -120,17 +140,29 @@ class MapsUtils {
 
         try {
             if (MapsActivity.ismLocationPermissionGranted()) {
+                Log.wtf(LOG_TAG, "permission was granted");
                 Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
                 locationResult.addOnCompleteListener(app, new OnCompleteListener<Location>() {
                     @Override
                     public void onComplete(@NonNull Task<Location> task) {
                         if (task.isSuccessful()) {
+                            Log.wtf(LOG_TAG, "task was succesful");
                             // Set the map's camera position to the current location of the device.
                             mLastKnownLocation = task.getResult();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                    new LatLng(mLastKnownLocation.getLatitude(),
-                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+
+                            // Here was the problem: from emulator mLastKnownLocation was null,
+                            //  so the crash was happening while trying to access
+                            //  mLastKnownLocation.getLatitude()
+                            if (mLastKnownLocation == null) {
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                        mDefaultLocation, DEFAULT_ZOOM));
+                            } else {
+                                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                        new LatLng(mLastKnownLocation.getLatitude(),
+                                                mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
+                            }
                         } else {
+                            Log.wtf(LOG_TAG, "task was unsuccesful");
                             Log.d(LOG_TAG, "Current location is null. Using defaults.");
                             Log.e(LOG_TAG, "Exception: %s", task.getException());
                             mMap.moveCamera(CameraUpdateFactory

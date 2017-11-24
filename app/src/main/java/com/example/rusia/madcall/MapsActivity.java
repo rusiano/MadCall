@@ -3,7 +3,6 @@ package com.example.rusia.madcall;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -25,7 +24,6 @@ import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -287,9 +285,8 @@ public class      MapsActivity
         MapsUtils.updateLocationUI(this, mMap, mMyLocationButton);
 
         // If after the UI update the MyLocation layer is still not enabled, re-try asking for permission
-        if (!mMap.isMyLocationEnabled()){
+        if (!mMap.isMyLocationEnabled())
             getLocationPermission();
-        }
 
         // Get the current location of the device and set the position of the map.
         MapsUtils.getDeviceLocation(this, mMap);
@@ -299,9 +296,8 @@ public class      MapsActivity
         // calle sepulveda
         mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(40.404482D, -3.739823D))
-                .icon(BitmapDescriptorFactory.fromBitmap(
-                        BitmapFactory.decodeResource(
-                                this.getResources(), R.drawable.ic_location_city_black_24dp))));
+                .icon(MapsUtils.bitmapDescriptorFromVector(this,
+                        R.drawable.ic_location_city_black_24dp)));
 
         MapsUtils.placeRandomMarkers(this, mMap, 200);
 
