@@ -185,7 +185,7 @@ public class      MapsActivity
 
         // Obtain the Settings button and define its behavior
         final boolean[] isSettingsButtonPressed = {false};    // save button state
-        FloatingActionButton mSettingsButton = findViewById(R.id.fab_search);
+        FloatingActionButton mSettingsButton = findViewById(R.id.fab_settings);
         mSettingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
