@@ -20,6 +20,9 @@ import android.widget.Toast;
 
 import com.example.rusia.madcall.design.CustomSlidingPaneLayout;
 //import com.example.rusia.madcall.fragment.NearMeFragment;
+import com.example.rusia.madcall.fragment.AdvancedSearchFragment;
+import com.example.rusia.madcall.fragment.NearMeFragment;
+import com.example.rusia.madcall.fragment.SettingsFragment;
 import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -83,8 +86,13 @@ public class      MapsActivity
         // Associate a layout file to the activity.
         setContentView(R.layout.activity_maps);
 
-        // Obtain the Sliding Pane Layout object and close the master pane by default
+        // Obtain the Sliding Pane Layout object
         mSlidingPaneLayout = findViewById(R.id.sliding_pane_layout);
+
+        // Since the master pane it is initially empty and open,
+        // set one default layout and close it
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.master_pane, new NearMeFragment()).commit();
         mSlidingPaneLayout.closePane();
 
         // Obtain the customized MyLocation button and the other buttons
@@ -120,7 +128,8 @@ public class      MapsActivity
             @Override
             public void onClick(View view) {
                 mSlidingPaneLayout.openPane();
-
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.master_pane, new NearMeFragment()).commit();
                 //TODO: change master pane layout accordingly
             }
         });
@@ -156,7 +165,8 @@ public class      MapsActivity
             @Override
             public void onClick(View view) {
                 mSlidingPaneLayout.openPane();
-
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.master_pane, new AdvancedSearchFragment()).commit();
                 //TODO: change master pane layout accordingly
             }
         });
@@ -190,7 +200,8 @@ public class      MapsActivity
             @Override
             public void onClick(View view) {
                 mSlidingPaneLayout.openPane();
-
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.master_pane, new SettingsFragment()).commit();
                 //TODO: change master pane layout accordingly
             }
         });

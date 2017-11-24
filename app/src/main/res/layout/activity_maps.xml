@@ -10,11 +10,10 @@
     <!-- PLEASE DO NOT CHANGE CHILDREN ORDER -->
 
     <!-- CONTENT 1 (on the left): The Master Pane -->
-    <fragment
+    <FrameLayout
         android:id="@+id/master_pane"
-        android:name="com.example.rusia.madcall.fragment.NearMeFragment"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content" />
 
     <!-- CONTENT 2 (on the right): The main view -->
     <com.flipboard.bottomsheet.BottomSheetLayout
