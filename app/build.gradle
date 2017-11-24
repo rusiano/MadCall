@@ -34,6 +34,9 @@ dependencies {
     implementation 'com.flipboard:bottomsheet-core:1.5.3'
     implementation 'com.flipboard:bottomsheet-commons:1.5.3'
 
+    // for justified textviews
+    implementation 'com.uncopt:android.justified:1.0'
+
     // for jena (NOT WORKING - commenting it out...)
     //implementation 'mobi.seus.jena:jena-android-arq:2.13.0'
 
