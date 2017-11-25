@@ -43,7 +43,7 @@ public class      MapsActivity
     private static final String     KEY_LOCATION = "location";
 
     // Design & Layout
-    private CustomSlidingPaneLayout mSlidingPaneLayout;
+    private static CustomSlidingPaneLayout mSlidingPaneLayout;
     private BottomSheetLayout       mBottomSheet;
     private FloatingActionButton    mMyLocationButton, mMenuButton;
     private SupportMapFragment      mMapFragment;
@@ -117,7 +117,6 @@ public class      MapsActivity
                 }
             }
         });
-
 
         // Obtain the NearMe button and define its behavior
         final boolean[] isNearMeButtonPressed = {false};    // save button state
@@ -439,4 +438,7 @@ public class      MapsActivity
         return mLocationPermissionGranted;
     }
 
+    public static CustomSlidingPaneLayout getmSlidingPaneLayout() {
+        return mSlidingPaneLayout;
+    }
 }
