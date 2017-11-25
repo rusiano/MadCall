@@ -2,8 +2,8 @@ package com.example.rusia.madcall;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -46,6 +46,7 @@ class MapsUtils {
                                          R.drawable.ic_person_black_24dp};
 
     // Google Map API related
+    private static boolean            cameraMapCentered;
     private static Location           mLastKnownLocation;
     private static final LatLng       mDefaultLocation = new LatLng(40.432643D, -3.704951D);
     private static final LatLng       mSouthWestBound = new LatLng(MIN_LAT, MIN_LNG);
@@ -92,7 +93,7 @@ class MapsUtils {
      */
     static void updateLocationUI(final Activity app,
                                  final GoogleMap mMap,
-                                 FloatingActionButton mMyLocationButton) {
+                                 final FloatingActionButton mMyLocationButton) {
         if (mMap == null)
             return;
 
@@ -101,12 +102,17 @@ class MapsUtils {
 
         // Hide the default MyLocation button provided by Google Maps API
         mMap.getUiSettings().setMyLocationButtonEnabled(false);
+        mMap.getUiSettings().setCompassEnabled(false);
+        mMap.getUiSettings().setMapToolbarEnabled(false);
 
         // Define the listener for our customized MyLocation button
         mMyLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 getDeviceLocation(app, mMap);
+                MapsUtils.cameraMapCentered = true;
+                mMyLocationButton.setBackgroundTintList(
+                        view.getResources().getColorStateList((R.color.colorPrimaryFaded)));
             }
         });
 
@@ -131,7 +137,6 @@ class MapsUtils {
          * Get the best and most recent location of the device, which may be null in rare
          * cases when a location is not available.
          */
-
 
         // Construct a FusedLocationProviderClient: it allows to get the best location using
         //  a combination of information coming from Wifi/Mobile Data & GPS.
@@ -171,6 +176,7 @@ class MapsUtils {
                         }
                     }
                 });
+                MapsUtils.setCameraMapCentered(true);
             }
         } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
@@ -183,5 +189,24 @@ class MapsUtils {
 
     static void setmLastKnownLocation(Location mLastKnownLocation) {
         MapsUtils.mLastKnownLocation = mLastKnownLocation;
+    }
+
+    static boolean isCameraMapCentered() {
+        return cameraMapCentered;
+    }
+
+    static void setCameraMapCentered(boolean cameraMapCentered) {
+        MapsUtils.cameraMapCentered = cameraMapCentered;
+
+        FloatingActionButton mMyLocationButton = MapsActivity.getmMyLocationButton();
+        Resources res = mMyLocationButton.getRootView().getResources();
+
+        if (MapsUtils.cameraMapCentered) {
+            mMyLocationButton.setBackgroundTintList(res.getColorStateList(R.color.colorPrimaryFaded));
+            mMyLocationButton.setClickable(false);
+        } else {
+            mMyLocationButton.setBackgroundTintList(res.getColorStateList(R.color.colorPrimary));
+            mMyLocationButton.setClickable(true);
+        }
     }
 }

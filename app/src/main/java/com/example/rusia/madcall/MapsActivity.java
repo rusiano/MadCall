@@ -13,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -34,10 +35,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 public class      MapsActivity
        extends    AppCompatActivity
        implements OnMapReadyCallback,
-                  GoogleMap.OnMarkerClickListener,
-                  GoogleMap.OnCameraMoveStartedListener,
-                  GoogleMap.OnCameraMoveListener,
-                  GoogleMap.OnCameraIdleListener {
+                  GoogleMap.OnMarkerClickListener, GoogleMap.OnCameraMoveStartedListener {
 
     // Keys for storing activity state
     private static final String     KEY_LOCATION = "location";
@@ -45,7 +43,8 @@ public class      MapsActivity
     // Design & Layout
     private static CustomSlidingPaneLayout mSlidingPaneLayout;
     private BottomSheetLayout       mBottomSheet;
-    private FloatingActionButton    mMyLocationButton, mMenuButton;
+    private static FloatingActionButton    mMyLocationButton;
+    private FloatingActionButton mMenuButton;
     private SupportMapFragment      mMapFragment;
     //private NearMeFragment      mMasterPaneFragment;
 
@@ -109,10 +108,14 @@ public class      MapsActivity
                 if(isMenuOpen[0]) {
                     isMenuOpen[0] = false;
                     mMenuButton.setRotation(0);
+                    mMenuButton.setBackgroundTintList(
+                            getResources().getColorStateList((R.color.colorPrimary)));
                     findViewById(R.id.left_icons).setVisibility(View.GONE);
                 } else {
                     isMenuOpen[0] = true;
                     mMenuButton.setRotation(90);
+                    mMenuButton.setBackgroundTintList(getResources()
+                            .getColorStateList(R.color.colorPrimaryDark));
                     findViewById(R.id.left_icons).setVisibility(View.VISIBLE);
                 }
             }
@@ -345,6 +348,7 @@ public class      MapsActivity
 
         MapsUtils.placeRandomMarkers(this, mMap, 200);
 
+        mMap.setOnCameraMoveStartedListener(this);
         mMap.setOnMarkerClickListener(this);
 
     }
@@ -416,29 +420,26 @@ public class      MapsActivity
         return false;
     }
 
-    //TODO: implement
-    @Override
-    public void onCameraIdle() {
-
-    }
-
-    //TODO: implement
-    @Override
-    public void onCameraMove() {
-
-    }
-
-    //TODO: implement
-    @Override
-    public void onCameraMoveStarted(int i) {
-
-    }
-
     static boolean ismLocationPermissionGranted() {
         return mLocationPermissionGranted;
     }
 
     public static CustomSlidingPaneLayout getmSlidingPaneLayout() {
         return mSlidingPaneLayout;
+    }
+
+    public static FloatingActionButton getmMyLocationButton() {
+        return mMyLocationButton;
+    }
+
+    @Override
+    public void onCameraMoveStarted(int reason) {
+
+        if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE
+                && MapsUtils.isCameraMapCentered()) {
+            Log.wtf("MADCALL-D", "camera was moved by user away from current position");
+            // map is no more centered - highlight myLocationButton
+            MapsUtils.setCameraMapCentered(false);
+        }
     }
 }
