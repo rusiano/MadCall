@@ -25,6 +25,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+
+            <!-- Map -->
             <fragment
                 android:id="@+id/map"
                 android:name="com.google.android.gms.maps.SupportMapFragment"
@@ -34,33 +36,39 @@
             <!-- Icons on the left-top -->
             <RelativeLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/side_margin"
+                android:layout_marginLeft="@dimen/side_margin"
+                android:layout_marginStart="@dimen/side_margin">
 
                 <android.support.design.widget.FloatingActionButton
                     android:id="@+id/fab_menu"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="start|top"
-                    android:layout_margin="5dp"
+                    android:layout_marginBottom="@dimen/big_margin"
                     android:src="@drawable/ic_menu_white_24dp"
                     android:visibility="visible"
-                    app:backgroundTint="@color/colorPrimary" />
+                    app:backgroundTint="@color/colorPrimary"
+                    app:useCompatPadding="true"
+                    app:elevation="0dp"
+                    app:pressedTranslationZ="0dp"/>
 
                 <!-- Hidden Icons & Descriptions -->
                 <RelativeLayout
                     android:id="@+id/left_icons"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_margin="5dp"
                     android:layout_below="@id/fab_menu"
-                    android:visibility="gone">
+                    android:visibility="visible">
 
                     <!-- 1st icon: NEAR ME -->
                     <RelativeLayout
                         android:id="@+id/near_me_box"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical|center_horizontal">
+                        android:layout_marginBottom="@dimen/fab_margin"
+                        android:layout_marginTop="0dp">
 
                         <TextView
                             android:id="@+id/fab_near_me_description"
@@ -85,7 +93,10 @@
                             android:layout_gravity="start|top"
                             android:src="@drawable/ic_near_me_white_24dp"
                             android:visibility="visible"
-                            app:backgroundTint="@color/colorPrimary" />
+                            app:backgroundTint="@color/colorPrimary"
+                            app:useCompatPadding="true"
+                            app:elevation="0dp"
+                            app:pressedTranslationZ="0dp" />
 
                     </RelativeLayout>
 
@@ -94,7 +105,9 @@
                         android:id="@+id/advanced_search_box"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_below="@+id/near_me_box">
+                        android:layout_below="@+id/near_me_box"
+                        android:layout_marginBottom="@dimen/fab_margin"
+                        android:layout_marginTop="0dp">
 
                         <TextView
                             android:id="@+id/fab_search_description"
@@ -119,7 +132,10 @@
                             android:layout_gravity="start|top"
                             android:src="@drawable/ic_search_white_24dp"
                             android:visibility="visible"
-                            app:backgroundTint="@color/colorPrimary" />
+                            app:useCompatPadding="true"
+                            app:backgroundTint="@color/colorPrimary"
+                            app:elevation="0dp"
+                            app:pressedTranslationZ="0dp" />
 
                     </RelativeLayout>
 
@@ -127,7 +143,9 @@
                     <RelativeLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_below="@+id/advanced_search_box">
+                        android:layout_below="@+id/advanced_search_box"
+                        android:layout_marginBottom="@dimen/fab_margin"
+                        android:layout_marginTop="0dp">
 
                         <TextView
                             android:id="@+id/fab_settings_description"
@@ -152,7 +170,10 @@
                             android:layout_gravity="start|top"
                             android:src="@drawable/ic_settings_white_24dp"
                             android:visibility="visible"
-                            app:backgroundTint="@color/colorPrimary" />
+                            app:backgroundTint="@color/colorPrimary"
+                            app:useCompatPadding="true"
+                            app:elevation="0dp"
+                            app:pressedTranslationZ="0dp" />
 
                     </RelativeLayout>
 
@@ -165,10 +186,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|top"
-                android:layout_margin="5dp"
+                android:layout_marginTop="@dimen/side_margin"
+                android:layout_marginRight="@dimen/side_margin"
+                android:layout_marginEnd="@dimen/side_margin"
                 android:src="@drawable/ic_my_location_white_24dp"
                 android:visibility="visible"
-                app:backgroundTint="@color/colorPrimary" />
+                app:backgroundTint="@color/colorPrimary"
+                app:useCompatPadding="true"
+                app:elevation="0dp"
+                app:pressedTranslationZ="0dp" />
 
         </FrameLayout>
 
