@@ -3,17 +3,16 @@ package com.example.rusia.madcall.fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
+import android.support.v4.widget.SlidingPaneLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
 
-import com.example.rusia.madcall.MapsActivity;
 import com.example.rusia.madcall.R;
 
 /**
  * Created by rusiano on 24/11/2017.
+ * -
  */
 
 public class NearMeFragment extends Fragment {
@@ -29,12 +28,15 @@ public class NearMeFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        final SlidingPaneLayout mSlidingPaneLayout = view.getRootView()
+                .findViewById(R.id.sliding_pane_layout);
         // set the behavior of the closing button
         view.findViewById(R.id.near_me_close).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                MapsActivity.getmSlidingPaneLayout().closePane();
+                mSlidingPaneLayout.closePane();
             }
         });
     }
+
 }

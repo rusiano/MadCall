@@ -49,10 +49,13 @@
                     android:layout_marginBottom="@dimen/big_margin"
                     android:src="@drawable/ic_menu_white_24dp"
                     android:visibility="visible"
+                    android:clickable="true"
+                    android:focusable="true"
                     app:backgroundTint="@color/colorPrimary"
                     app:useCompatPadding="true"
                     app:elevation="0dp"
-                    app:pressedTranslationZ="0dp"/>
+                    app:pressedTranslationZ="0dp"
+                    app:rippleColor="@color/colorPrimaryDark"/>
 
                 <!-- Hidden Icons & Descriptions -->
                 <RelativeLayout
@@ -181,20 +184,44 @@
 
             </RelativeLayout>
 
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fab_location"
+            <!-- Top-right icons -->
+            <RelativeLayout
+                android:id="@+id/right_icons"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end|top"
                 android:layout_marginTop="@dimen/side_margin"
                 android:layout_marginRight="@dimen/side_margin"
-                android:layout_marginEnd="@dimen/side_margin"
-                android:src="@drawable/ic_my_location_white_24dp"
-                android:visibility="visible"
-                app:backgroundTint="@color/colorPrimaryFaded"
-                app:useCompatPadding="true"
-                app:elevation="0dp"
-                app:pressedTranslationZ="0dp" />
+                android:layout_marginEnd="@dimen/side_margin">
+
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/fab_location"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/fab_margin"
+                    android:src="@drawable/ic_my_location_white_24dp"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/colorPrimaryFaded"
+                    app:elevation="0dp"
+                    app:pressedTranslationZ="0dp"
+                    app:useCompatPadding="true" />
+
+                <android.support.design.widget.FloatingActionButton
+                    android:id="@+id/fab_orientation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/fab_location"
+                    android:layout_gravity="end|top"
+                    android:layout_marginBottom="@dimen/fab_margin"
+                    android:rotation="-45"
+                    android:src="@drawable/ic_explore_white_24dp"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/colorPrimaryFaded"
+                    app:elevation="0dp"
+                    app:pressedTranslationZ="0dp"
+                    app:useCompatPadding="true" />
+
+            </RelativeLayout>
 
         </FrameLayout>
 

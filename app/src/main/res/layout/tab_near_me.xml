@@ -31,6 +31,8 @@
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
             android:background="@color/colorPrimary"
+            android:paddingLeft="@dimen/title_padding"
+            android:paddingRight="@dimen/title_padding"
             app:srcCompat="@drawable/ic_close_white_24dp"
             tools:ignore="VectorDrawableCompat" />
 
