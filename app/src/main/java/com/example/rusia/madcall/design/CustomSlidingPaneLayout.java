@@ -18,8 +18,8 @@ public class CustomSlidingPaneLayout extends SlidingPaneLayout {
 
     /*
      * We are overriding this method because normally if you swipe right you open the master pane
-     * but as we deal with a map, most of the times we swipe right is just to move around with the
-     * map and we do not want to open any pane. On the contrary, we want the pane to open only
+     * but as we deal with a map, most of the times we swipe right it is just to move around with
+     * the map and we do not want to open any pane. On the contrary, we want the pane to open only
      * when we click on the corresponding buttons.
      */
     @Override

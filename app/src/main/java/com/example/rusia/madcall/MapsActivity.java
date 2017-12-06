@@ -173,7 +173,7 @@ public class      MapsActivity
         mMapHelper.setupMapLayout(mMap);
 
         // Center the camera on the last known position of the device.
-        mMapHelper.getDeviceLastKnownLocation(mMap);
+        mMapHelper.getDeviceLastKnownLocation(mMap, true);
 
         // Instantiate and set a listener for gestures on map
         MapListener mMapListener = new MapListener(this, mMap);

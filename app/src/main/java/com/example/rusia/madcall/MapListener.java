@@ -21,6 +21,8 @@ public class       MapListener
                    GoogleMap.OnCameraMoveListener,
                    GoogleMap.OnCameraIdleListener {
 
+    private static final float DEFAULT_ROTATION = -45f;
+
     private MapsActivity activity;
     private GoogleMap mMap;
     private MapHelper mapHelper;
@@ -80,17 +82,18 @@ public class       MapListener
                 mapHelper.setCameraMapStraight(false);
                 return;
             }
-            mapHelper.getmMyOrientationButton().setRotation(-45f -mMap.getCameraPosition().bearing);
+            mapHelper.getmMyOrientationButton()
+                    .setRotation(DEFAULT_ROTATION -mMap.getCameraPosition().bearing);
         }
     }
 
     @Override
     public void onCameraIdle() {
 
-        Log.wtf(MapHelper.LOG_TAG, "Bearing: " + mMap.getCameraPosition().bearing);
         if (mMap.getCameraPosition().bearing != 0
                  && this.wasMapMovedByUser) {
-            mapHelper.getmMyOrientationButton().setRotation(-45f -mMap.getCameraPosition().bearing);
+            mapHelper.getmMyOrientationButton()
+                    .setRotation(DEFAULT_ROTATION - mMap.getCameraPosition().bearing);
             this.wasMapMovedByUser = false;
         }
 
