@@ -84,17 +84,17 @@ public class ButtonListener
         switch (viewId) {
             case (R.id.fab_near_me):
                 // Show the description of the button and save the state
-                view.findViewById(R.id.fab_near_me_description).setVisibility(View.VISIBLE);
+                activity.findViewById(R.id.fab_near_me_description).setVisibility(View.VISIBLE);
                 isNearMeButtonPressed = true;
                 break;
             case (R.id.fab_search):
                 // Show the description of the button and save the state
-                view.findViewById(R.id.fab_search_description).setVisibility(View.VISIBLE);
+                activity.findViewById(R.id.fab_search_description).setVisibility(View.VISIBLE);
                 isSearchButtonPressed = true;
                 break;
             case (R.id.fab_settings):
                 // Show the description of the button and save the state
-                view.findViewById(R.id.fab_settings_description).setVisibility(View.VISIBLE);
+                activity.findViewById(R.id.fab_settings_description).setVisibility(View.VISIBLE);
                 isSettingsButtonPressed = true;
                 break;
         }
@@ -110,21 +110,21 @@ public class ButtonListener
             case (R.id.fab_near_me):
                 // If search button is pressed and the user releases it, hide the button description
                 if (isNearMeButtonPressed && motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    view.findViewById(R.id.fab_near_me_description).setVisibility(View.GONE);
+                    activity.findViewById(R.id.fab_near_me_description).setVisibility(View.GONE);
                     isNearMeButtonPressed = false;
                 }
                 break;
             case (R.id.fab_search):
                 // If search button is pressed and the user releases it, hide the button description
                 if (isSearchButtonPressed && motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    view.findViewById(R.id.fab_search_description).setVisibility(View.GONE);
+                    activity.findViewById(R.id.fab_search_description).setVisibility(View.GONE);
                     isSearchButtonPressed = false;
                 }
                 break;
             case (R.id.fab_settings):
                 // If search button is pressed and the user releases it, hide the button description
                 if (isSettingsButtonPressed && motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    view.findViewById(R.id.fab_settings_description).setVisibility(View.GONE);
+                    activity.findViewById(R.id.fab_settings_description).setVisibility(View.GONE);
                     isSettingsButtonPressed = false;
                 }
                 break;
