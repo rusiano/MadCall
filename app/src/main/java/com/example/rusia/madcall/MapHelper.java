@@ -103,7 +103,7 @@ class MapHelper {
         mMyLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                centerCameraOnDeviceLocation(mMap);
+                getDeviceLastKnownLocation(mMap, true);
             }
         });
         mMyOrientationButton.setOnClickListener(new View.OnClickListener() {
@@ -117,7 +117,7 @@ class MapHelper {
     /**
      * Gets the last known location of the device.
      */
-    void getDeviceLastKnownLocation(final GoogleMap mMap) {
+    void getDeviceLastKnownLocation(final GoogleMap mMap, final boolean centerCamera) {
         /*
          * Get the best and most recent location of the device, which may be null in rare
          * cases when a location is not available.
@@ -137,7 +137,8 @@ class MapHelper {
                     public void onComplete(@NonNull Task<Location> task) {
                         mLastKnownLocation = (task.isSuccessful()) ? task.getResult() : null;
                         Log.wtf(LOG_TAG, "last known location: " + mLastKnownLocation);
-                        centerCameraOnDeviceLocation(mMap);
+                        if (centerCamera)
+                            centerCameraOnDeviceLocation(mMap);
                     }
                 });
             } else {
