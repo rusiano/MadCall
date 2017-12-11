@@ -163,7 +163,6 @@ public class      MapsActivity
         // Activate MyLocation service
         activateMyLocation();
 
-        // TODO: check if this check is actually needed
         /*// If after the UI update the MyLocation layer is still not enabled, re-try asking for permission
         if (!mMap.isMyLocationEnabled())
             getLocationPermission();*/
@@ -182,9 +181,6 @@ public class      MapsActivity
         mMap.setOnMarkerClickListener(mMapHelper);
         mMap.setOnCameraMoveListener(mMapHelper);
         mMap.setOnCameraIdleListener(mMapHelper);
-
-        // TODO: display markers around device location
-        //mMapHelper.placeRandomMarkers(mMap, 200);
 
     }
 

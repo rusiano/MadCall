@@ -13,6 +13,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.os.Handler;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.flipboard.bottomsheet.BottomSheetLayout;
@@ -30,6 +32,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
@@ -364,16 +368,25 @@ class MapHelper
                 try  {
 
                     String queryString =
-                            "SELECT distinct ?lat ?lng " +
-                                    "where {?street <http://www.semanticweb.org/madcal#latitude> ?lat. " +
-                                    "?street <http://www.semanticweb.org/madcal#longitude> ?lng. " +
-                                    "filter (?lat < " + currentMaxLat + "). " +
-                                    "filter (?lat > " + currentMinLat + "). " +
-                                    "filter (?lng > " + currentMinLng + "). " +
-                                    "filter (?lng < " + currentMaxLng + ") }" ;
+                            "SELECT distinct ?name ?lat ?lng " +
+                            "where { " +
+                            "?street <http://www.semanticweb.org/madcal#hasName> ?name. " +
+                            "?street <http://www.semanticweb.org/madcal#latitude> ?lat. " +
+                            "?street <http://www.semanticweb.org/madcal#longitude> ?lng. " +
+                            "filter (?lat < " + currentMaxLat + "). " +
+                            "filter (?lat > " + currentMinLat + "). " +
+                            "filter (?lng > " + currentMinLng + "). " +
+                            "filter (?lng < " + currentMaxLng + ") " +
+                            "}" ;
 
-                    Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
+                    /*Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
                     QueryEngineHTTP exec = new QueryEngineHTTP(AWS_SPARQL_ENDPOINT_URL, query);
+
+                    QueryExecutionFactory.sparqlService()*/
+                    Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
+                    QueryExecution exec = QueryExecutionFactory.sparqlService(
+                            AWS_SPARQL_ENDPOINT_URL, query, "http://localhost:8890/Callejero_0" ) ;
+
                     final ResultSet results = exec.execSelect() ;
 
                     activity.runOnUiThread(new Runnable() {
@@ -381,11 +394,15 @@ class MapHelper
                         public void run() {
                             while (results.hasNext()) {
                                 QuerySolution binding = results.nextSolution();
+
+                                String name = binding.getLiteral("name").getString();
                                 double lat = binding.getLiteral("lat").getDouble();
                                 double lng = binding.getLiteral("lng").getDouble();
 
-                                MapsActivity.getmMap().addMarker(
+                                Marker newMarker = MapsActivity.getmMap().addMarker(
                                         new MarkerOptions().position(new LatLng(lat, lng)));
+
+                                newMarker.setTag(new MarkerInfo(name, ""));
                             }
                         }
                     });
@@ -411,11 +428,16 @@ class MapHelper
         mBottomSheet.showWithSheetView(LayoutInflater.from(ctx).inflate(
                 R.layout.infobox, mBottomSheet, false));
 
+        TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
+        infoboxTitle.setText(((MarkerInfo) marker.getTag()).getName());
+
+        // TODO: remove it when actual description will be available
+        //TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
+        //infoboxDescription.setText(((MarkerInfo) marker.getTag()).getDescription());
+
         Toast.makeText(ctx,
                 "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
                 Toast.LENGTH_SHORT).show();
-
-        //TODO: retrieve information for the appropriate marker and display it in the bottom sheet
 
         // Return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
