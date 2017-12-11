@@ -1,19 +1,14 @@
 package com.example.rusia.madcall;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
 
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.os.Handler;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,8 +17,6 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -38,17 +31,9 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
-import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
-
-import java.util.ArrayList;
-import java.util.Random;
 
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_BOUNDS;
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_ZOOM;
-import static com.example.rusia.madcall.MapHelper.CameraConstant.MAX_LAT;
-import static com.example.rusia.madcall.MapHelper.CameraConstant.MAX_LNG;
-import static com.example.rusia.madcall.MapHelper.CameraConstant.MIN_LAT;
-import static com.example.rusia.madcall.MapHelper.CameraConstant.MIN_LNG;
 
 /**
  * Created by rusia on 24/11/2017.
@@ -64,8 +49,11 @@ class MapHelper
     static final String LOG_TAG = "MADCALL";
     private static final String AWS_SPARQL_ENDPOINT_URL
             = "http://ec2-54-208-226-156.compute-1.amazonaws.com/sparql";
+    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_2";
+
     static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final float DFLT_COMPASS_BTN_ROT = -45f;
+
 
     interface CameraConstant {
         int    DEFAULT_ZOOM = 17;
@@ -77,10 +65,6 @@ class MapHelper
         LatLngBounds DEFAULT_BOUNDS = new LatLngBounds(new LatLng(MIN_LAT, MIN_LNG),
                 new LatLng(MAX_LAT, MAX_LNG));
     }
-
-    private static final int[]  ICONS = {R.drawable.ic_event_black_24dp,
-            R.drawable.ic_location_city_black_24dp,
-            R.drawable.ic_person_black_24dp};
 
     // Google Map API related
     private static Location           mLastKnownLocation;
@@ -95,7 +79,6 @@ class MapHelper
     private double currentMaxLat;
     private double currentMinLng;
     private double currentMaxLng;
-    private ArrayList<LatLng> markersCoords;
 
     MapHelper(MapsActivity activity) {
         this.activity = activity;
@@ -206,45 +189,11 @@ class MapHelper
         setCameraMapStraight(true);
     }
 
-    /**
-     * Places n random markers (with random icons) on the map.
-     */
-    void placeRandomMarkers(GoogleMap mMap, int n) {
-        for (int i = 0; i < n; i++) {
-            double lat = MIN_LAT + (MAX_LAT - MIN_LAT)
-                    * (double) Math.round((new Random().nextDouble()) * 1000000d) / 1000000d;
-            double lng = MIN_LNG + (MAX_LNG - MIN_LNG)
-                    * (double) Math.round((new Random().nextDouble()) * 1000000d) / 1000000d;
-            int ic = new Random().nextInt(ICONS.length);
-
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(lat, lng))
-                    .icon(bitmapDescriptorFromVector(ICONS[ic])));
-        }
-    }
-
-    /**
-     * This method transforms a Vector (icon) into a Bitmap. The previous implementation was
-     * making the emulator crash and was removed.
-     * Source: https://stackoverflow.com/questions/42365658/custom-marker-in-google-maps-in-android-with-vector-asset-icon
-     */
-    private BitmapDescriptor bitmapDescriptorFromVector(int vectorResId) {
-        Drawable vectorDrawable = ContextCompat.getDrawable(ctx, vectorResId);
-        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight());
-
-        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-
-        vectorDrawable.draw(new Canvas(bitmap));
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
-    }
-
-    boolean isCameraMapCentered() {
+    private boolean isCameraMapCentered() {
         return isCameraMapCentered;
     }
 
-    void setCameraMapCentered(boolean cameraMapCentered) {
+    private void setCameraMapCentered(boolean cameraMapCentered) {
 
         isCameraMapCentered = cameraMapCentered;
 
@@ -270,11 +219,11 @@ class MapHelper
         }
     }
 
-    boolean isCameraMapStraight() {
+    private boolean isCameraMapStraight() {
         return isCameraMapStraight;
     }
 
-    void setCameraMapStraight(boolean cameraMapStraight) {
+    private void setCameraMapStraight(boolean cameraMapStraight) {
         isCameraMapStraight = cameraMapStraight;
 
         // Update also the appearance of MyLocation button
@@ -317,8 +266,6 @@ class MapHelper
 
     @Override
     public void onCameraMove() {
-
-        markersCoords = new ArrayList<>();
 
         if (MapsActivity.getmMap().getCameraPosition().bearing != 0
                 && this.wasMapMovedByUser) {
@@ -368,16 +315,18 @@ class MapHelper
                 try  {
 
                     String queryString =
-                            "SELECT distinct ?name ?lat ?lng " +
-                            "where { " +
-                            "?street <http://www.semanticweb.org/madcal#hasName> ?name. " +
-                            "?street <http://www.semanticweb.org/madcal#latitude> ?lat. " +
-                            "?street <http://www.semanticweb.org/madcal#longitude> ?lng. " +
-                            "filter (?lat < " + currentMaxLat + "). " +
-                            "filter (?lat > " + currentMinLat + "). " +
-                            "filter (?lng > " + currentMinLng + "). " +
-                            "filter (?lng < " + currentMaxLng + ") " +
-                            "}" ;
+                            "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> " +
+                            "SELECT DISTINCT ?name ?lat ?lng " +
+                            "WHERE { " +
+                                "?street <http://www.semanticweb.org/madcal#hasName> ?name. " +
+                                "?street <http://www.semanticweb.org/madcal#latitude> ?lat. " +
+                                "?street <http://www.semanticweb.org/madcal#longitude> ?lng. " +
+                                "FILTER (xsd:double(?lat) < " + currentMaxLat + "). " +
+                                "FILTER (xsd:double(?lat) > " + currentMinLat + "). " +
+                                "FILTER (xsd:double(?lng) > " + currentMinLng + "). " +
+                                "FILTER (xsd:double(?lng) < " + currentMaxLng + "). " +
+                            "} " +
+                            "LIMIT 50" ;
 
                     /*Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
                     QueryEngineHTTP exec = new QueryEngineHTTP(AWS_SPARQL_ENDPOINT_URL, query);
@@ -385,7 +334,7 @@ class MapHelper
                     QueryExecutionFactory.sparqlService()*/
                     Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
                     QueryExecution exec = QueryExecutionFactory.sparqlService(
-                            AWS_SPARQL_ENDPOINT_URL, query, "http://localhost:8890/Callejero_0" ) ;
+                            AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI ) ;
 
                     final ResultSet results = exec.execSelect() ;
 
@@ -396,13 +345,15 @@ class MapHelper
                                 QuerySolution binding = results.nextSolution();
 
                                 String name = binding.getLiteral("name").getString();
-                                double lat = binding.getLiteral("lat").getDouble();
-                                double lng = binding.getLiteral("lng").getDouble();
+                                double lat = Double.parseDouble(
+                                        binding.getLiteral("lat").getString());
+                                double lng = Double.parseDouble(
+                                        binding.getLiteral("lng").getString());
 
                                 Marker newMarker = MapsActivity.getmMap().addMarker(
                                         new MarkerOptions().position(new LatLng(lat, lng)));
 
-                                newMarker.setTag(new MarkerInfo(name, ""));
+                                newMarker.setTag(new MarkerData(name, ""));
                             }
                         }
                     });
@@ -421,6 +372,11 @@ class MapHelper
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
+        MarkerData markerData = (MarkerData) marker.getTag();
+
+        if (markerData == null)
+            return false;
+
         Context ctx = activity.getApplicationContext();
         BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
 
@@ -428,12 +384,13 @@ class MapHelper
         mBottomSheet.showWithSheetView(LayoutInflater.from(ctx).inflate(
                 R.layout.infobox, mBottomSheet, false));
 
+        // Change the inflated layout so to display all the data associated with the marker
         TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
-        infoboxTitle.setText(((MarkerInfo) marker.getTag()).getName());
+        infoboxTitle.setText(markerData.getName());
 
         // TODO: remove it when actual description will be available
         //TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
-        //infoboxDescription.setText(((MarkerInfo) marker.getTag()).getDescription());
+        //infoboxDescription.setText(markerData.getDescription());
 
         Toast.makeText(ctx,
                 "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
