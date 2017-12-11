@@ -49,7 +49,7 @@ class MapHelper
     static final String LOG_TAG = "MADCALL";
     private static final String AWS_SPARQL_ENDPOINT_URL
             = "http://ec2-54-208-226-156.compute-1.amazonaws.com/sparql";
-    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_2";
+    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_3";
 
     static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final float DFLT_COMPASS_BTN_ROT = -45f;
