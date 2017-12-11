@@ -23,7 +23,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 
-
 public class      MapsActivity
        extends    AppCompatActivity
        implements OnMapReadyCallback {
@@ -32,7 +31,6 @@ public class      MapsActivity
 
     private SupportMapFragment mMapFragment;
     private static GoogleMap mMap;
-    private MapHelper mMapHelper;
 
 
     /**
@@ -94,6 +92,10 @@ public class      MapsActivity
             button.setOnLongClickListener(optionButtonsListener);
             button.setOnTouchListener(optionButtonsListener);
         }
+    }
+
+    public static GoogleMap getmMap() {
+        return mMap;
     }
 
     /**
@@ -167,7 +169,7 @@ public class      MapsActivity
             getLocationPermission();*/
 
         // Instantiate a MapHelper object
-        mMapHelper = new MapHelper(this);
+        MapHelper mMapHelper = new MapHelper(this);
 
         // Setup the (customized) layout of the map.
         mMapHelper.setupMapLayout(mMap);
@@ -176,14 +178,13 @@ public class      MapsActivity
         mMapHelper.getDeviceLastKnownLocation(mMap, true);
 
         // Instantiate and set a listener for gestures on map
-        MapListener mMapListener = new MapListener(this, mMap);
-        mMap.setOnCameraMoveStartedListener(mMapListener);
-        mMap.setOnMarkerClickListener(mMapListener);
-        mMap.setOnCameraMoveListener(mMapListener);
-        mMap.setOnCameraIdleListener(mMapListener);
+        mMap.setOnCameraMoveStartedListener(mMapHelper);
+        mMap.setOnMarkerClickListener(mMapHelper);
+        mMap.setOnCameraMoveListener(mMapHelper);
+        mMap.setOnCameraIdleListener(mMapHelper);
 
         // TODO: display markers around device location
-        mMapHelper.placeRandomMarkers(mMap, 200);
+        //mMapHelper.placeRandomMarkers(mMap, 200);
 
     }
 
@@ -244,10 +245,6 @@ public class      MapsActivity
         } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage());
         }
-    }
-
-    public MapHelper getmMapHelper() {
-        return mMapHelper;
     }
 
     public boolean ismLocationPermissionGranted() {

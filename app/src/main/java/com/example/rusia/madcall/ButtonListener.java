@@ -44,7 +44,7 @@ public class ButtonListener
         RelativeLayout leftIcons = activity.findViewById(R.id.left_icons);
         switch (viewId) {
             case (R.id.fab_menu):
-                if(isMenuOpen) {
+                if (isMenuOpen) {
                     isMenuOpen = false;
                     view.setRotation(0);
                     leftIcons.setVisibility(View.GONE);
@@ -54,24 +54,28 @@ public class ButtonListener
                     leftIcons.setVisibility(View.VISIBLE);
                 }
                 break;
+
             case (R.id.fab_near_me):
                 mSlidingPaneLayout.openPane();
                 mFragmentManager.beginTransaction()
                         .replace(R.id.master_pane, new NearMeFragment()).commit();
                 //TODO: change master pane layout accordingly
                 break;
+
             case (R.id.fab_search):
                 mSlidingPaneLayout.openPane();
                 mFragmentManager.beginTransaction()
                         .replace(R.id.master_pane, new AdvancedSearchFragment()).commit();
                 //TODO: change master pane layout accordingly
                 break;
+
             case (R.id.fab_settings):
                 mSlidingPaneLayout.openPane();
                 mFragmentManager.beginTransaction()
                         .replace(R.id.master_pane, new SettingsFragment()).commit();
                 //TODO: change master pane layout accordingly
                 break;
+
             case (R.id.fab_location):
 
         }
