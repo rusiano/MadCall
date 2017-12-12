@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     defaultConfig {
+        multiDexEnabled true
         applicationId "com.example.rusia.madcall"
         minSdkVersion 15
         targetSdkVersion 26
@@ -23,10 +24,10 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support:design:26.1.0'
     // for maps
-    implementation 'com.google.android.gms:play-services-base:11.6.0'
-    implementation 'com.google.android.gms:play-services-maps:11.6.0'
-    implementation 'com.google.android.gms:play-services-location:11.6.0'
-    implementation 'com.google.android.gms:play-services-games:11.6.0'
+    implementation 'com.google.android.gms:play-services-base:11.6.2'
+    implementation 'com.google.android.gms:play-services-maps:11.6.2'
+    implementation 'com.google.android.gms:play-services-location:11.6.2'
+    implementation 'com.google.android.gms:play-services-games:11.6.2'
     // for bottomsheets (sliding up panel)
     implementation 'com.flipboard:bottomsheet-core:1.5.3'
     implementation 'com.flipboard:bottomsheet-commons:1.5.3'
@@ -46,18 +47,3 @@ dependencies {
     implementation files('libs/lucenoid_3.0.2.jar')
     implementation files('libs/slf4j-android-1.6.1-RC1.jar')
 }
-
-/*
-// for jena (NOT WORKING - commenting it out...)
-// we have to exclude a few files here that appear in multiple libraries
-android.packagingOptions {
-    pickFirst 'org/apache/**'
-    pickFirst 'etc/**'
-    pickFirst 'jena-log4j.properties'
-    pickFirst 'ont-policy.rdf'
-    exclude 'META-INF/DEPENDENCIES'
-    exclude 'META-INF/LICENSE'
-    exclude 'META-INF/NOTICE'
-    exclude 'META-INF/LICENSE.txt'
-    exclude 'META-INF/NOTICE.txt'
-}*/
