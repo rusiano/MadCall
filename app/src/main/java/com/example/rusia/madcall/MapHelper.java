@@ -249,7 +249,7 @@ class MapHelper
     }
 
     ///
-    /// LINSTENER'S METHODS
+    /// LISTENER'S METHODS
     ///
 
     @Override
