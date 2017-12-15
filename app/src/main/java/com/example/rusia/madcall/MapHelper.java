@@ -1,6 +1,7 @@
 package com.example.rusia.madcall;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -8,6 +9,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.flipboard.bottomsheet.BottomSheetLayout;
@@ -30,6 +32,10 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Resource;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_BOUNDS;
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_ZOOM;
@@ -80,6 +86,7 @@ class MapHelper
     private double currentMaxLng;
 
     private Resource subj;
+    private String pic;
     public String algo;
     public String abs;
 
@@ -420,8 +427,9 @@ class MapHelper
 */                  System.out.println("DBPEDIA RESOURCE--->" + algo);
                 String queryString2=
                         "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
-                                "select ?abstract  where { " +
-                                "  <" + algo + "> dbpedia-owl:abstract ?abstract." +
+                                "select ?abstract ?thumbnail where { " +
+                                "  <" + algo + "> dbpedia-owl:abstract ?abstract;" +
+                                "   dbpedia-owl:thumbnail ?thumbnail ." +
                                 "}";
 
                 Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
@@ -433,28 +441,42 @@ class MapHelper
                             QuerySolution binding2 = results2.nextSolution();
 
                             abs = (String) binding2.getLiteral("abstract").getString();
-                            System.out.println(abs);
+                            pic = (String)  binding2.get("thumbnail").toString();
+                            System.out.println("THIS IS THE PIC URL------>"+pic);
                         }
-
                 markerData.setDescription(abs);
                 TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
                 infoboxDescription.setText(markerData.getDescription());
+                //Drawable draws= LoadImageFromWebOperations(pic);
+
+                InputStream is = null;
+                Drawable d=null;
+                try {
+                    is = (InputStream) new URL(pic).getContent();
+
+                    d = Drawable.createFromStream(is, "src name");
+
+                    System.out.println("THE PICTURE:"+is);
+
+                } catch (IOException e) {
+                    System.out.println("NO PICTURE TO DISPLAY ");
+                    e.printStackTrace();
+                }
+                ImageView imageadded = mBottomSheet.findViewById(R.id.imageView);
+                imageadded.setActivated(true);
+                imageadded.setImageDrawable(d);
+
 
             }
         }).start();
 
 
-/*
-        TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
-        infoboxDescription.setText(markerData.getDescription());
-
-        Toast.makeText(ctx,
-                "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
-                Toast.LENGTH_SHORT).show();
-*/
         // Return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
         return false;
     }
+
+
+
 }
