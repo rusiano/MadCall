@@ -9,7 +9,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -81,7 +80,8 @@ class MapHelper
     private double currentMaxLng;
 
     private Resource subj;
-    private String algo;
+    public String algo;
+    public String abs;
 
     MapHelper(MapsActivity activity) {
         this.activity = activity;
@@ -351,7 +351,7 @@ class MapHelper
                                 Marker newMarker = MapsActivity.getmMap().addMarker(
                                         new MarkerOptions().position(new LatLng(lat, lng)));
 
-                                newMarker.setTag(new MarkerData(name, "Sorry, no description available for this street"));
+                                newMarker.setTag(new MarkerData(name, ""));
                             }
                         }
                     });
@@ -376,7 +376,7 @@ class MapHelper
             return false;
         final String nameAdd = markerData.getName();
         Context ctx = activity.getApplicationContext();
-        BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
+        final BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
 
         // Slide in the infobox (bottomsheet) and inflate the corresponding layout.
         mBottomSheet.showWithSheetView(LayoutInflater.from(ctx).inflate(
@@ -385,14 +385,12 @@ class MapHelper
         // Change the inflated layout so to display all the data associated with the marker
         TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
         infoboxTitle.setText(nameAdd);
-        System.out.println(nameAdd);
+
         new Thread(new Runnable() {
 
             @Override
             public void run() {
-                try {
-
-                    String queryString =
+                String queryString =
                             " SELECT DISTINCT ?dbres " +
                                     "  WHERE {" +
                                     " ?street <http://dbpedia.org/ontology/name> '" + nameAdd + "' . " +
@@ -403,26 +401,15 @@ class MapHelper
                     QueryExecution exec = QueryExecutionFactory.sparqlService(
                             AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
 
-                    final ResultSet results = exec.execSelect();
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                final ResultSet results = exec.execSelect();
+
                             while (results.hasNext()) {
                                 QuerySolution binding = results.nextSolution();
                                 algo =  binding.get("dbres").toString();
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try{
+                            }
+
+
                     /*String queryString2 =
                             "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
                                     "select ?abstract ?thumbnail where {" +
@@ -431,52 +418,40 @@ class MapHelper
                                     "  filter(langMatches(lang(?abstract),\"en\"))" +
                                     "}";
 */                  System.out.println("DBPEDIA RESOURCE--->" + algo);
-                    String queryString2=
-                            "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
-                            "select ?abstract  where { " +
-                                    "  <" + algo + "> dbpedia-owl:abstract ?abstract." +
-                                    "}";
+                String queryString2=
+                        "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
+                                "select ?abstract  where { " +
+                                "  <" + algo + "> dbpedia-owl:abstract ?abstract." +
+                                "}";
 
-                    Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
-                    QueryExecution exec2 = QueryExecutionFactory.sparqlService(
-                            "http://es.dbpedia.org/sparql", query2);
-                    final ResultSet results2 = exec2.execSelect();
+                Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
+                QueryExecution exec2 = QueryExecutionFactory.sparqlService(
+                        "http://es.dbpedia.org/sparql", query2);
+                final ResultSet results2 = exec2.execSelect();
+                abs=" --------------------- SORRY, TRY ANOTHER STREET ---------------------";
+                        while (results2.hasNext()) {
+                            QuerySolution binding2 = results2.nextSolution();
 
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            while (results2.hasNext()) {
-                                QuerySolution binding2 = results2.nextSolution();
-
-                                String abs = (String) binding2.getLiteral("abstract").getString();
-                                System.out.println(abs);
-                                markerData.setDescription(abs);
-
-                            }
+                            abs = (String) binding2.getLiteral("abstract").getString();
+                            System.out.println(abs);
                         }
-                    });
 
-
-
-
-                }catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-
-
-
+                markerData.setDescription(abs);
+                TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
+                infoboxDescription.setText(markerData.getDescription());
 
             }
         }).start();
 
+
+/*
         TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
         infoboxDescription.setText(markerData.getDescription());
 
         Toast.makeText(ctx,
                 "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
                 Toast.LENGTH_SHORT).show();
-
+*/
         // Return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
