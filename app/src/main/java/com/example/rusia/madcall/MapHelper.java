@@ -2,13 +2,12 @@ package com.example.rusia.madcall;
 
 import android.content.Context;
 import android.location.Location;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.os.Handler;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +30,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Resource;
 
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_BOUNDS;
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_ZOOM;
@@ -49,7 +49,7 @@ class MapHelper
     static final String LOG_TAG = "MADCALL";
     private static final String AWS_SPARQL_ENDPOINT_URL
             = "http://ec2-54-208-226-156.compute-1.amazonaws.com/sparql";
-    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_3";
+    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_4";
 
     static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final float DFLT_COMPASS_BTN_ROT = -45f;
@@ -79,6 +79,9 @@ class MapHelper
     private double currentMaxLat;
     private double currentMinLng;
     private double currentMaxLng;
+
+    private Resource subj;
+    private String algo;
 
     MapHelper(MapsActivity activity) {
         this.activity = activity;
@@ -318,9 +321,9 @@ class MapHelper
                             "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> " +
                             "SELECT DISTINCT ?name ?lat ?lng " +
                             "WHERE { " +
-                                "?street <http://www.semanticweb.org/madcal#hasName> ?name. " +
-                                "?street <http://www.semanticweb.org/madcal#latitude> ?lat. " +
-                                "?street <http://www.semanticweb.org/madcal#longitude> ?lng. " +
+                                "?street <http://dbpedia.org/ontology/name> ?name. " +
+                                "?street <http://www.w3.org/2003/01/geo/wgs84_pos#lat> ?lat. " +
+                                "?street <http://www.w3.org/2003/01/geo/wgs84_pos#long> ?lng. " +
                                 "FILTER (xsd:double(?lat) < " + currentMaxLat + "). " +
                                 "FILTER (xsd:double(?lat) > " + currentMinLat + "). " +
                                 "FILTER (xsd:double(?lng) > " + currentMinLng + "). " +
@@ -328,16 +331,11 @@ class MapHelper
                             "} " +
                             "LIMIT 50" ;
 
-                    /*Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
-                    QueryEngineHTTP exec = new QueryEngineHTTP(AWS_SPARQL_ENDPOINT_URL, query);
-
-                    QueryExecutionFactory.sparqlService()*/
                     Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
                     QueryExecution exec = QueryExecutionFactory.sparqlService(
                             AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI ) ;
 
                     final ResultSet results = exec.execSelect() ;
-
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -353,7 +351,7 @@ class MapHelper
                                 Marker newMarker = MapsActivity.getmMap().addMarker(
                                         new MarkerOptions().position(new LatLng(lat, lng)));
 
-                                newMarker.setTag(new MarkerData(name, ""));
+                                newMarker.setTag(new MarkerData(name, "Sorry, no description available for this street"));
                             }
                         }
                     });
@@ -372,11 +370,11 @@ class MapHelper
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
-        MarkerData markerData = (MarkerData) marker.getTag();
+        final MarkerData markerData = (MarkerData) marker.getTag();
 
         if (markerData == null)
             return false;
-
+        final String nameAdd = markerData.getName();
         Context ctx = activity.getApplicationContext();
         BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
 
@@ -386,11 +384,94 @@ class MapHelper
 
         // Change the inflated layout so to display all the data associated with the marker
         TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
-        infoboxTitle.setText(markerData.getName());
+        infoboxTitle.setText(nameAdd);
+        System.out.println(nameAdd);
+        new Thread(new Runnable() {
 
-        // TODO: remove it when actual description will be available
-        //TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
-        //infoboxDescription.setText(markerData.getDescription());
+            @Override
+            public void run() {
+                try {
+
+                    String queryString =
+                            " SELECT DISTINCT ?dbres " +
+                                    "  WHERE {" +
+                                    " ?street <http://dbpedia.org/ontology/name> '" + nameAdd + "' . " +
+                                    " ?street <http://dbpedia.org/ontology/namedAfter> ?dbres." +
+                                    " }";
+
+                    Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
+                    QueryExecution exec = QueryExecutionFactory.sparqlService(
+                            AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
+
+                    final ResultSet results = exec.execSelect();
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (results.hasNext()) {
+                                QuerySolution binding = results.nextSolution();
+                                algo =  binding.get("dbres").toString();
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    /*String queryString2 =
+                            "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
+                                    "select ?abstract ?thumbnail where {" +
+                                    " <" + subj[0] + "> dbpedia-owl:abstract ?abstract ;" +
+                                    "                           dbpedia-owl:thumbnail ?thumbnail ." +
+                                    "  filter(langMatches(lang(?abstract),\"en\"))" +
+                                    "}";
+*/                  System.out.println("DBPEDIA RESOURCE--->" + algo);
+                    String queryString2=
+                            "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
+                            "select ?abstract  where { " +
+                                    "  <" + algo + "> dbpedia-owl:abstract ?abstract." +
+                                    "}";
+
+                    Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
+                    QueryExecution exec2 = QueryExecutionFactory.sparqlService(
+                            "http://es.dbpedia.org/sparql", query2);
+                    final ResultSet results2 = exec2.execSelect();
+
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            while (results2.hasNext()) {
+                                QuerySolution binding2 = results2.nextSolution();
+
+                                String abs = (String) binding2.getLiteral("abstract").getString();
+                                System.out.println(abs);
+                                markerData.setDescription(abs);
+
+                            }
+                        }
+                    });
+
+
+
+
+                }catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+
+
+
+
+            }
+        }).start();
+
+        TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
+        infoboxDescription.setText(markerData.getDescription());
 
         Toast.makeText(ctx,
                 "(" + marker.getPosition().latitude + ", " + marker.getPosition().longitude + ")",
