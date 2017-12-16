@@ -7,11 +7,20 @@ package com.example.rusia.madcall;
 public class MarkerData {
 
     private String name;
-    private String description;
+    private String label;
 
-    public MarkerData(String name, String description) {
+
+    public MarkerData(String name, String label) {
         this.name = name;
-        this.description = description;
+        this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public String getName() {
@@ -20,13 +29,5 @@ public class MarkerData {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }
