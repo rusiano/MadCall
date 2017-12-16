@@ -1,7 +1,8 @@
 package com.example.rusia.madcall;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Location;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -11,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.flipboard.bottomsheet.BottomSheetLayout;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -31,11 +33,12 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
-import com.hp.hpl.jena.rdf.model.Resource;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_BOUNDS;
 import static com.example.rusia.madcall.MapHelper.CameraConstant.DEFAULT_ZOOM;
@@ -54,11 +57,11 @@ class MapHelper
     static final String LOG_TAG = "MADCALL";
     private static final String AWS_SPARQL_ENDPOINT_URL
             = "http://ec2-54-208-226-156.compute-1.amazonaws.com/sparql";
+    private static final String ESDBPEDIA_SPARQL_ENDPOINT_URL = "http://es.dbpedia.org/sparql";
     private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_4";
 
     static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final float DFLT_COMPASS_BTN_ROT = -45f;
-
 
     interface CameraConstant {
         int    DEFAULT_ZOOM = 17;
@@ -84,11 +87,6 @@ class MapHelper
     private double currentMaxLat;
     private double currentMinLng;
     private double currentMaxLng;
-
-    private Resource subj;
-    private String pic;
-    public String algo;
-    public String abs;
 
     MapHelper(MapsActivity activity) {
         this.activity = activity;
@@ -343,6 +341,7 @@ class MapHelper
                             AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI ) ;
 
                     final ResultSet results = exec.execSelect() ;
+
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -377,95 +376,132 @@ class MapHelper
     @Override
     public boolean onMarkerClick(final Marker marker) {
 
-        final MarkerData markerData = (MarkerData) marker.getTag();
-
-        if (markerData == null)
-            return false;
-        final String nameAdd = markerData.getName();
-        Context ctx = activity.getApplicationContext();
-        final BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
+        final Context ctx = activity.getApplicationContext();
 
         // Slide in the infobox (bottomsheet) and inflate the corresponding layout.
+        final BottomSheetLayout mBottomSheet = activity.findViewById(R.id.bottomsheet);
         mBottomSheet.showWithSheetView(LayoutInflater.from(ctx).inflate(
                 R.layout.infobox, mBottomSheet, false));
 
-        // Change the inflated layout so to display all the data associated with the marker
-        TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
-        infoboxTitle.setText(nameAdd);
+        // Retrieve infobox picture, title and description boxes to fill in later
+        final ImageView infoboxPicture = mBottomSheet.findViewById(R.id.infobox_picture);
+        final TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
+        final TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
 
+        // Retrieve the clicked marker
+        final MarkerData markerData = (MarkerData) marker.getTag();
+        if (markerData == null)
+            return false;
+
+        // Change the inflated layout so to display all the data associated with the marker
+        final String streetName = markerData.getName();
+        infoboxTitle.setText(streetName);
+
+        // Query the rdf to retrieve additional useful information about the selected street
         new Thread(new Runnable() {
 
             @Override
             public void run() {
+
+                //
+                // First query:
+                // retrieve the dbpedia uri of the resource referenced by the selected street
+                //
+
                 String queryString =
-                            " SELECT DISTINCT ?dbres " +
-                                    "  WHERE {" +
-                                    " ?street <http://dbpedia.org/ontology/name> '" + nameAdd + "' . " +
-                                    " ?street <http://dbpedia.org/ontology/namedAfter> ?dbres." +
-                                    " }";
+                    "SELECT DISTINCT ?dbres " +
+                    "WHERE {" +
+                    "?street <http://dbpedia.org/ontology/name> '" + streetName + "'. " +
+                    "?street <http://dbpedia.org/ontology/namedAfter> ?dbres." +
+                    "}";
 
-                    Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
-                    QueryExecution exec = QueryExecutionFactory.sparqlService(
-                            AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
+                Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
+                QueryExecution awsSparqlService = QueryExecutionFactory.sparqlService(
+                        AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
 
-                final ResultSet results = exec.execSelect();
+                ResultSet results = awsSparqlService.execSelect();
+                String resUri = "";
+                while (results.hasNext()) {
+                    QuerySolution binding = results.nextSolution();
+                    resUri =  binding.get("dbres").toString();
+                    break;
+                }
 
-                            while (results.hasNext()) {
-                                QuerySolution binding = results.nextSolution();
-                                algo =  binding.get("dbres").toString();
+                //
+                // Second query:
+                // use the retrieved uri to query dbpedia rdf and get additional information
+                //
+
+                String queryString2=
+                    "PREFIX dbo: <http://dbpedia.org/ontology/>" +
+                    "SELECT ?abstract ?thumbnail where { " +
+                    "<" + resUri + "> dbo:abstract ?abstract. " +
+                    "<" + resUri + "> dbo:thumbnail ?thumbnail." +
+                    "}";
+
+                Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
+                QueryExecution dbpediaSparqlService = QueryExecutionFactory.sparqlService(
+                        ESDBPEDIA_SPARQL_ENDPOINT_URL, query2);
+
+                final ResultSet results2 = dbpediaSparqlService.execSelect();
+
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        while (results2.hasNext()) {
+                            QuerySolution binding2 = results2.nextSolution();
+                            String resAbstract = binding2.getLiteral("abstract").getString();
+                            final String resPicture = binding2.get("thumbnail").toString();
+
+                            System.out.println("THIS IS THE PIC URL------>"+ resPicture);
+
+                            if (resPicture != null && !resPicture.equals("")) {
+                                Toast.makeText(ctx, "resPicture: " + resPicture,
+                                        Toast.LENGTH_SHORT).show();
+
+                                new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            URL resPictureUrl = new URL(resPicture);
+                                            HttpURLConnection httpconn = (HttpURLConnection)
+                                                    resPictureUrl.openConnection();
+                                            httpconn.setInstanceFollowRedirects(false);
+                                            resPictureUrl = new URL(
+                                                    httpconn.getHeaderField("Location"));
+                                            URLConnection connection = resPictureUrl.openConnection();
+
+                                            final Bitmap resBm = BitmapFactory.decodeStream(
+                                                    connection.getInputStream());
+
+                                            activity.runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    infoboxPicture.setImageBitmap(resBm);
+                                                    infoboxPicture.setVisibility(View.VISIBLE);
+                                                }
+                                            });
+
+                                        } catch (MalformedURLException mue) {
+                                            mue.printStackTrace();
+                                        } catch (IOException ioe) {
+                                            ioe.printStackTrace();
+                                        }
+                                    }
+                                }).start();
 
                             }
 
-
-                    /*String queryString2 =
-                            "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
-                                    "select ?abstract ?thumbnail where {" +
-                                    " <" + subj[0] + "> dbpedia-owl:abstract ?abstract ;" +
-                                    "                           dbpedia-owl:thumbnail ?thumbnail ." +
-                                    "  filter(langMatches(lang(?abstract),\"en\"))" +
-                                    "}";
-*/                  System.out.println("DBPEDIA RESOURCE--->" + algo);
-                String queryString2=
-                        "prefix dbpedia-owl: <http://dbpedia.org/ontology/>" +
-                                "select ?abstract ?thumbnail where { " +
-                                "  <" + algo + "> dbpedia-owl:abstract ?abstract;" +
-                                "   dbpedia-owl:thumbnail ?thumbnail ." +
-                                "}";
-
-                Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
-                QueryExecution exec2 = QueryExecutionFactory.sparqlService(
-                        "http://es.dbpedia.org/sparql", query2);
-                final ResultSet results2 = exec2.execSelect();
-                abs=" --------------------- SORRY, TRY ANOTHER STREET ---------------------";
-                        while (results2.hasNext()) {
-                            QuerySolution binding2 = results2.nextSolution();
-
-                            abs = (String) binding2.getLiteral("abstract").getString();
-                            pic = (String)  binding2.get("thumbnail").toString();
-                            System.out.println("THIS IS THE PIC URL------>"+pic);
+                            // Display the information retrieved in the infobox
+                            if (resAbstract != null && !resAbstract.equals(""))
+                                infoboxDescription.setText(resAbstract + "\n" + resPicture);
+                            // TODO: display picture if any is available
+                            break;
                         }
-                markerData.setDescription(abs);
-                TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
-                infoboxDescription.setText(markerData.getDescription());
-                //Drawable draws= LoadImageFromWebOperations(pic);
 
-                InputStream is = null;
-                Drawable d=null;
-                try {
-                    is = (InputStream) new URL(pic).getContent();
-
-                    d = Drawable.createFromStream(is, "src name");
-
-                    System.out.println("THE PICTURE:"+is);
-
-                } catch (IOException e) {
-                    System.out.println("NO PICTURE TO DISPLAY ");
-                    e.printStackTrace();
-                }
-                ImageView imageadded = mBottomSheet.findViewById(R.id.imageView);
-                imageadded.setActivated(true);
-                imageadded.setImageDrawable(d);
-
+                    }
+                });
 
             }
         }).start();
