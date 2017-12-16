@@ -33,6 +33,8 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Literal;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -324,9 +326,11 @@ class MapHelper
 
                     String queryString =
                             "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> " +
-                            "SELECT DISTINCT ?name ?lat ?lng " +
+                            "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> "+
+                            "SELECT DISTINCT ?name ?label ?lat ?lng " +
                             "WHERE { " +
                                 "?street <http://dbpedia.org/ontology/name> ?name. " +
+                                "?street rdfs:label ?label. " +
                                 "?street <http://www.w3.org/2003/01/geo/wgs84_pos#lat> ?lat. " +
                                 "?street <http://www.w3.org/2003/01/geo/wgs84_pos#long> ?lng. " +
                                 "FILTER (xsd:double(?lat) < " + currentMaxLat + "). " +
@@ -349,6 +353,7 @@ class MapHelper
                                 QuerySolution binding = results.nextSolution();
 
                                 String name = binding.getLiteral("name").getString();
+                                String label = binding.getLiteral("label").getString();
                                 double lat = Double.parseDouble(
                                         binding.getLiteral("lat").getString());
                                 double lng = Double.parseDouble(
@@ -357,7 +362,7 @@ class MapHelper
                                 Marker newMarker = MapsActivity.getmMap().addMarker(
                                         new MarkerOptions().position(new LatLng(lat, lng)));
 
-                                newMarker.setTag(new MarkerData(name, ""));
+                                newMarker.setTag(new MarkerData(name, label));
                             }
                         }
                     });
@@ -386,6 +391,7 @@ class MapHelper
         // Retrieve infobox picture, title and description boxes to fill in later
         final ImageView infoboxPicture = mBottomSheet.findViewById(R.id.infobox_picture);
         final TextView infoboxTitle = mBottomSheet.findViewById(R.id.infobox_title);
+        final TextView infoboxSubtitle = mBottomSheet.findViewById(R.id.infobox_subtitle);
         final TextView infoboxDescription = mBottomSheet.findViewById(R.id.infobox_description);
 
         // Retrieve the clicked marker
@@ -395,7 +401,9 @@ class MapHelper
 
         // Change the inflated layout so to display all the data associated with the marker
         final String streetName = markerData.getName();
+        final String streetLabel = markerData.getLabel();
         infoboxTitle.setText(streetName);
+        infoboxSubtitle.setText(streetLabel);
 
         // Query the rdf to retrieve additional useful information about the selected street
         new Thread(new Runnable() {
@@ -403,105 +411,149 @@ class MapHelper
             @Override
             public void run() {
 
-                //
-                // First query:
-                // retrieve the dbpedia uri of the resource referenced by the selected street
-                //
+            //
+            // First query:
+            // retrieve the dbpedia uri of the resource referenced by the selected street
+            //
 
-                String queryString =
-                    "SELECT DISTINCT ?dbres " +
-                    "WHERE {" +
-                    "?street <http://dbpedia.org/ontology/name> '" + streetName + "'. " +
-                    "?street <http://dbpedia.org/ontology/namedAfter> ?dbres." +
-                    "}";
+            String queryString =
+                "SELECT DISTINCT ?dbres " +
+                "WHERE {" +
+                "?street <http://dbpedia.org/ontology/name> '" + streetName + "'. " +
+                "?street <http://dbpedia.org/ontology/namedAfter> ?dbres." +
+                "}";
 
-                Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
-                QueryExecution awsSparqlService = QueryExecutionFactory.sparqlService(
-                        AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
+            Log.wtf("MADCALL", "Street name: " + streetName );
+            Query query = QueryFactory.create(queryString, Syntax.syntaxARQ);
+            QueryExecution awsSparqlService = QueryExecutionFactory.sparqlService(
+                    AWS_SPARQL_ENDPOINT_URL, query, DEFAULT_GRAPH_IRI);
 
-                ResultSet results = awsSparqlService.execSelect();
-                String resUri = "";
-                while (results.hasNext()) {
-                    QuerySolution binding = results.nextSolution();
-                    resUri =  binding.get("dbres").toString();
-                    break;
-                }
+            ResultSet results = awsSparqlService.execSelect();
+            String resUri = "";
+            while (results.hasNext()) {
+                QuerySolution binding = results.nextSolution();
+                resUri =  binding.get("dbres").toString();
+                break;
+            }
 
-                //
-                // Second query:
-                // use the retrieved uri to query dbpedia rdf and get additional information
-                //
+            if (resUri.equals("") || resUri.contains("disambiguation")) {
+                infoboxDescription.setText(R.string.no_description_found);
+                return;
+            }
 
-                String queryString2=
-                    "PREFIX dbo: <http://dbpedia.org/ontology/>" +
-                    "SELECT ?abstract ?thumbnail where { " +
-                    "<" + resUri + "> dbo:abstract ?abstract. " +
-                    "<" + resUri + "> dbo:thumbnail ?thumbnail." +
-                    "}";
+            Log.wtf("MADCALL", "Dbpedia Res. URI: " + resUri);
 
-                Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
-                QueryExecution dbpediaSparqlService = QueryExecutionFactory.sparqlService(
-                        ESDBPEDIA_SPARQL_ENDPOINT_URL, query2);
+            //
+            // Second query:
+            // use the retrieved uri to query dbpedia rdf and get additional information
+            //
 
-                final ResultSet results2 = dbpediaSparqlService.execSelect();
+            String queryString2=
+                "PREFIX dbo: <http://dbpedia.org/ontology/> " +
+                "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> " +
+                "SELECT DISTINCT ?abstract ?abstract2 ?thumbnail ?thumbnail2 ?label " +
+                "WHERE { " +
+                "OPTIONAL { <" + resUri + "> dbo:abstract ?abstract. } " +
+                "OPTIONAL { <" + resUri + "> dbo:thumbnail ?thumbnail. } " +
+                "OPTIONAL { <" + resUri + "> dbo:wikiPageRedirects ?redirect. " +
+                "           ?redirect rdfs:label ?label. " +
+                "           ?redirect dbo:abstract ?abstract2. " +
+                "           ?redirect dbo:thumbnail ?thumbnail2. } " +
+                "}";
 
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+            Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
+            QueryExecution dbpediaSparqlService = QueryExecutionFactory.sparqlService(
+                    ESDBPEDIA_SPARQL_ENDPOINT_URL, query2);
 
-                        while (results2.hasNext()) {
-                            QuerySolution binding2 = results2.nextSolution();
-                            String resAbstract = binding2.getLiteral("abstract").getString();
-                            final String resPicture = binding2.get("thumbnail").toString();
+            final ResultSet results2 = dbpediaSparqlService.execSelect();
 
-                            System.out.println("THIS IS THE PIC URL------>"+ resPicture);
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
 
-                            if (resPicture != null && !resPicture.equals("")) {
-                                Toast.makeText(ctx, "resPicture: " + resPicture,
-                                        Toast.LENGTH_SHORT).show();
+                    QuerySolution binding2 = null;
+                    while (results2.hasNext()) {
+                        binding2 = results2.nextSolution();
+                        break;
+                    }
 
-                                new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            URL resPictureUrl = new URL(resPicture);
-                                            HttpURLConnection httpconn = (HttpURLConnection)
-                                                    resPictureUrl.openConnection();
-                                            httpconn.setInstanceFollowRedirects(false);
-                                            resPictureUrl = new URL(
-                                                    httpconn.getHeaderField("Location"));
-                                            URLConnection connection = resPictureUrl.openConnection();
+                    if (binding2 == null)
+                        return;
 
-                                            final Bitmap resBm = BitmapFactory.decodeStream(
-                                                    connection.getInputStream());
+                    // Display the abstract
+                    Literal resAbstract = binding2.getLiteral("abstract");
+                    Literal resAbstract2 = binding2.getLiteral("abstract2");
+                    Literal resName2 = binding2.getLiteral("label");
+                    String resAbstractString;
+                    // If no abstract is available, return
+                    if (resAbstract == null && resAbstract2 == null) {
+                        Log.wtf("MADCALL", "No abstract found");
+                        infoboxDescription.setText(R.string.no_description_found);
+                        return;
+                    }
 
-                                            activity.runOnUiThread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    infoboxPicture.setImageBitmap(resBm);
-                                                    infoboxPicture.setVisibility(View.VISIBLE);
-                                                }
-                                            });
+                    if (resAbstract != null) {
+                        resAbstractString = resAbstract.toString();
+                        if (!resAbstractString.equals(""))
+                            infoboxDescription.setText(resAbstractString);
 
-                                        } catch (MalformedURLException mue) {
-                                            mue.printStackTrace();
-                                        } catch (IOException ioe) {
-                                            ioe.printStackTrace();
-                                        }
-                                    }
-                                }).start();
-
-                            }
-
-                            // Display the information retrieved in the infobox
-                            if (resAbstract != null && !resAbstract.equals(""))
-                                infoboxDescription.setText(resAbstract + "\n" + resPicture);
-                            // TODO: display picture if any is available
-                            break;
-                        }
+                    } else {
+                        infoboxTitle.setText(resName2.toString());
+                        resAbstractString = resAbstract2.getString();
+                        if (!resAbstractString.equals(""))
+                            infoboxDescription.setText(resAbstractString);
 
                     }
-                });
+
+                    // Display the image if an abstract has been found
+                    final RDFNode resPictureResult = binding2.get("thumbnail");
+                    final RDFNode resPictureResult2 = binding2.get("thumbnail2");
+
+                    if (resPictureResult == null && resPictureResult2 == null)
+                        return;
+
+                    final String resPictureString = (resPictureResult != null) ?
+                            resPictureResult.toString() :
+                            resPictureResult2.toString();
+
+                    if (resPictureString.equals(""))
+                        return;
+
+                    Log.wtf("MADCALL", "Picture URL: " + resPictureString);
+
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                URL resPictureUrl = new URL(resPictureString);
+                                HttpURLConnection httpconn = (HttpURLConnection)
+                                        resPictureUrl.openConnection();
+                                httpconn.setInstanceFollowRedirects(false);
+                                resPictureUrl = new URL(
+                                        httpconn.getHeaderField("Location"));
+                                URLConnection connection = resPictureUrl.openConnection();
+
+                                final Bitmap resBm = BitmapFactory.decodeStream(
+                                        connection.getInputStream());
+
+                                activity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        infoboxPicture.setImageBitmap(resBm);
+                                        infoboxPicture.setVisibility(View.VISIBLE);
+                                    }
+                                });
+
+                            } catch (MalformedURLException mue) {
+                                mue.printStackTrace();
+                            } catch (IOException ioe) {
+                                ioe.printStackTrace();
+                            }
+                            }
+                        }).start();
+
+                }
+            });
 
             }
         }).start();
