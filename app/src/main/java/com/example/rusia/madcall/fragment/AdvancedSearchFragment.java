@@ -33,6 +33,7 @@ public class AdvancedSearchFragment extends Fragment {
 
         final SlidingPaneLayout mSlidingPaneLayout = view.getRootView()
                 .findViewById(R.id.sliding_pane_layout);
+
         // set the behavior of the closing button
         view.findViewById(R.id.advanced_search_close).setOnClickListener(new View.OnClickListener() {
             @Override

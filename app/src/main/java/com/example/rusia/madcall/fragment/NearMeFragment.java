@@ -7,6 +7,7 @@ import android.support.v4.widget.SlidingPaneLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.example.rusia.madcall.R;
 
@@ -28,8 +29,11 @@ public class NearMeFragment extends Fragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        final SlidingPaneLayout mSlidingPaneLayout = view.getRootView()
-                .findViewById(R.id.sliding_pane_layout);
+        final View rootView = view.getRootView();
+        final SlidingPaneLayout mSlidingPaneLayout = rootView.findViewById(R.id.sliding_pane_layout);
+
+        ListView listView = rootView.findViewById(R.id.near_streets_list_view);
+
         // set the behavior of the closing button
         view.findViewById(R.id.near_me_close).setOnClickListener(new View.OnClickListener() {
             @Override
