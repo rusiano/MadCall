@@ -10,12 +10,12 @@ public class MarkerData {
     private String label;
 
 
-    public MarkerData(String name, String label) {
+    MarkerData(String name, String label) {
         this.name = name;
         this.label = label;
     }
 
-    public String getLabel() {
+    String getLabel() {
         return label;
     }
 

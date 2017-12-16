@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/infobox_layout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="@drawable/bg_infobox"
     android:gravity="top|center_horizontal"
     android:orientation="vertical"
@@ -19,12 +19,26 @@
         android:id="@+id/infobox_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/lorem_ipsum"
-        android:layout_margin="@dimen/default_margin"
+        android:text=""
+        android:layout_marginTop="@dimen/default_margin"
+        android:layout_marginEnd="@dimen/default_margin"
+        android:layout_marginStart="@dimen/default_margin"
         android:textAlignment="center"
         android:textColor="@color/white"
         android:textSize="@dimen/title_size"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:layout_marginRight="@dimen/default_margin" />
+
+    <TextView
+        android:id="@+id/infobox_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:layout_marginBottom="@dimen/default_margin"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/subtitle_size"
+        android:textStyle="italic|bold" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -36,7 +50,7 @@
             android:id="@+id/infobox_description"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/no_description_found"
+            android:text="@string/searching_for_the_content"
             android:textAlignment="center"
             android:textColor="@color/white" />
 
