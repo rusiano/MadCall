@@ -15,4 +15,5 @@
     <string name="picture">picture</string>
     <string name="lorem_ipsum">LOREM IPSUM</string>
     <string name="no_description_found">Sorry, no description was found for this street.</string>
+    <string name="searching_for_the_content">...Searching for the content...</string>
 </resources>

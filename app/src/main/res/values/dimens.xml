@@ -7,4 +7,5 @@
     <dimen name="title_size">20sp</dimen>
     <dimen name="title_padding">20dp</dimen>
     <dimen name="icon_size">147dp</dimen>
+    <dimen name="subtitle_size">15sp</dimen>
 </resources>
