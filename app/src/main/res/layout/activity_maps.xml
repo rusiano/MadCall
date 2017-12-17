@@ -37,9 +37,10 @@
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/side_margin"
                 android:layout_marginLeft="@dimen/side_margin"
-                android:layout_marginStart="@dimen/side_margin">
+                android:layout_marginStart="@dimen/side_margin"
+                android:layout_marginTop="@dimen/side_margin"
+                android:visibility="gone">
 
                 <android.support.design.widget.FloatingActionButton
                     android:id="@+id/fab_menu"
@@ -47,15 +48,15 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="start|top"
                     android:layout_marginBottom="@dimen/big_margin"
-                    android:src="@drawable/ic_menu_white_24dp"
-                    android:visibility="visible"
                     android:clickable="true"
                     android:focusable="true"
+                    android:src="@drawable/ic_menu_white_24dp"
+                    android:visibility="visible"
                     app:backgroundTint="@color/colorPrimary"
-                    app:useCompatPadding="true"
                     app:elevation="0dp"
                     app:pressedTranslationZ="0dp"
-                    app:rippleColor="@color/colorPrimaryDark"/>
+                    app:rippleColor="@color/colorPrimaryDark"
+                    app:useCompatPadding="true" />
 
                 <!-- Hidden Icons & Descriptions -->
                 <RelativeLayout
@@ -97,9 +98,9 @@
                             android:src="@drawable/ic_near_me_white_24dp"
                             android:visibility="visible"
                             app:backgroundTint="@color/colorPrimary"
-                            app:useCompatPadding="true"
                             app:elevation="0dp"
-                            app:pressedTranslationZ="0dp" />
+                            app:pressedTranslationZ="0dp"
+                            app:useCompatPadding="true" />
 
                     </RelativeLayout>
 
@@ -135,10 +136,10 @@
                             android:layout_gravity="start|top"
                             android:src="@drawable/ic_search_white_24dp"
                             android:visibility="visible"
-                            app:useCompatPadding="true"
                             app:backgroundTint="@color/colorPrimary"
                             app:elevation="0dp"
-                            app:pressedTranslationZ="0dp" />
+                            app:pressedTranslationZ="0dp"
+                            app:useCompatPadding="true" />
 
                     </RelativeLayout>
 
@@ -174,9 +175,9 @@
                             android:src="@drawable/ic_settings_white_24dp"
                             android:visibility="visible"
                             app:backgroundTint="@color/colorPrimary"
-                            app:useCompatPadding="true"
                             app:elevation="0dp"
-                            app:pressedTranslationZ="0dp" />
+                            app:pressedTranslationZ="0dp"
+                            app:useCompatPadding="true" />
 
                     </RelativeLayout>
 
