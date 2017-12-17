@@ -60,7 +60,7 @@ class MapHelper
     private static final String AWS_SPARQL_ENDPOINT_URL
             = "http://ec2-54-208-226-156.compute-1.amazonaws.com/sparql";
     private static final String ESDBPEDIA_SPARQL_ENDPOINT_URL = "http://es.dbpedia.org/sparql";
-    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_5";
+    private static final String DEFAULT_GRAPH_IRI = "http://localhost:8890/Callejero_6";
 
     static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1;
     private static final float DFLT_COMPASS_BTN_ROT = -45f;
@@ -405,8 +405,6 @@ class MapHelper
         infoboxTitle.setText(streetName);
         infoboxSubtitle.setText(streetLabel);
 
-        Log.wtf("MADCALL", "[Thread " + Thread.currentThread().getId() + "]");
-
         // Define the thread in which to query the rdf to retrieve additional useful information
         // about the selected street
         Thread queriesTread = new Thread(new Runnable() {
@@ -435,7 +433,7 @@ class MapHelper
                 String resUri = "";
                 while (results.hasNext()) {
                     QuerySolution binding = results.nextSolution();
-                    resUri = binding.get("dbres").toString().replace("%C3%B1", "n");
+                    resUri = binding.get("dbres").toString();
                     Log.wtf("MADCALL", "Dbpedia Res. URI: " + resUri);
                     break;
                 }
@@ -463,7 +461,7 @@ class MapHelper
                                 "OPTIONAL { <" + resUri + "> dbo:wikiPageRedirects ?redirect. " +
                                 "           ?redirect rdfs:label ?label. " +
                                 "           ?redirect dbo:abstract ?abstract2. " +
-                                "           ?redirect dbo:thumbnail ?thumbnail2. } " +
+                                "           OPTIONAL { ?redirect dbo:thumbnail ?thumbnail2. } } " +
                                 "}";
 
                 Query query2 = QueryFactory.create(queryString2, Syntax.syntaxARQ);
